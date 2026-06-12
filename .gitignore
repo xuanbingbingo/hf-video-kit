@@ -6,3 +6,5 @@ __pycache__/
 *.zip
 snapshots/
 .DS_Store
+
+private/
