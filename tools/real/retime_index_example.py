@@ -8,9 +8,9 @@
 import json
 import sys
 
-A = json.load(open(sys.argv[1]))
+A = json.load(open(sys.argv[1], encoding='utf-8'))
 PATH = sys.argv[2]
-src = open(PATH).read()
+src = open(PATH, encoding='utf-8').read()
 
 D = A["DUR"]; T = A["T_PIP"]
 def r2(x):
@@ -112,5 +112,5 @@ for old, new, cnt in REPL:
     assert found == cnt, f"断言失败: {old!r} 期望 {cnt} 次实际 {found} 次"
     src = src.replace(old, new)
 
-open(PATH, "w").write(src)
+open(PATH, "w", encoding="utf-8").write(src)
 print(f"OK: {len(REPL)} 处规格全部替换完成 -> {PATH}")

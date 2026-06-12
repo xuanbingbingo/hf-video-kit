@@ -16,9 +16,9 @@ SRC, WORDS_IN, SEGS_IN, DST, WORDS_OUT = sys.argv[1:6]
 FPS = 30
 WORD_MARGIN = 0.12
 
-words = json.load(open(WORDS_IN))
+words = json.load(open(WORDS_IN, encoding='utf-8'))
 segs = [(s["start"], s["end"])
-        for s in json.load(open(SEGS_IN))["segments"]]
+        for s in json.load(open(SEGS_IN, encoding='utf-8'))["segments"]]
 
 probe = subprocess.run(
     ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_format", SRC],
@@ -64,7 +64,7 @@ for i, (s, e) in enumerate(keeps):
 lines.append("".join(f"{v}{a}" for v, a in zip(parts_v, parts_a))
               + f"concat=n={len(keeps)}:v=1:a=1[vo][ao]")
 fname = DST.rsplit(".", 1)[0] + "_filter.txt"
-with open(fname, "w") as f:
+with open(fname, "w", encoding="utf-8") as f:
     f.write("\n".join(lines))
 
 r = subprocess.run(
@@ -83,7 +83,7 @@ def remap(t):
 
 json.dump([{"text": w["text"], "start": remap(w["start"]),
             "end": remap(w["end"])} for w in words],
-          open(WORDS_OUT, "w"), ensure_ascii=False)
+          open(WORDS_OUT, "w", encoding="utf-8"), ensure_ascii=False)
 
 probe2 = subprocess.run(
     ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_format", DST],

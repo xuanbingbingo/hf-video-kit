@@ -1,7 +1,8 @@
-# hf-video-kit — 给 Claude Code 的口播视频自动生产线
+# hf-video-kit — AI 代理驾驶的口播视频自动生产线
 
 把一篇文案变成一条**带配音、逐字点亮字幕、画面跟着内容自动切换**的竖版成片，
-全程由 Claude Code 驾驶。你只负责两件事：给文案、看片提意见。
+全程由 AI 编程代理驾驶（默认 Claude Code，也兼容 Codex / Cursor / Hermes 等，见下文）。
+你只负责两件事：给文案、看片提意见。
 
 基于 [HyperFrames](https://github.com/heygen-com/hyperframes)（HTML 即视频）+ GSAP + 字级时间轴。
 
@@ -35,7 +36,7 @@ cd hf-video-kit && bash install.sh   # kit 落位 ~/hf-video-kit + 工作流装�
 ```
 
 ```powershell
-# Windows 11（PowerShell）
+# Windows 10 / 11（PowerShell）
 git clone https://github.com/xuanbingbingo/hf-video-kit.git
 cd hf-video-kit; powershell -ExecutionPolicy Bypass -File .\install.ps1
 ```
@@ -48,6 +49,15 @@ cd hf-video-kit; powershell -ExecutionPolicy Bypass -File .\install.ps1
 
 修改也是说人话："音色换个女声"、"第二段画面太空"、"语速快一点"。
 
+## 不用 Claude Code？
+
+核心是 Markdown 规则书 + 命令行工具，**不绑定特定代理**。Codex / Cursor / Gemini CLI /
+Hermes 等工具的用法：clone 后让你的代理读仓库根目录的 `AGENTS.md`（这些工具会自动读取），
+再说「读 SETUP.md 把环境装好」即可，`install.sh` 的 skill 安装步骤会自动跳过。
+
+如实说明验证状态：Claude Code（macOS）全流程日常在用；Hermes 实测过 Claude 格式
+skill runtime；Codex / Cursor 等未实测，遇到问题提 issue。
+
 ## 写文案的唯一技巧
 
 口语化（像说话），让内容自然路过不同形态——讲个数据、做个对比、给个清单——
@@ -56,7 +66,8 @@ cd hf-video-kit; powershell -ExecutionPolicy Bypass -File .\install.ps1
 ## 目录结构
 
 ```
-CLAUDE.md                 # ★ Claude 的常驻规则书（模式判定/流程/场景判定表/硬规则）
+CLAUDE.md                 # ★ 常驻规则书（模式判定/流程/场景判定表/硬规则），所有代理通用
+AGENTS.md                 # 非 Claude Code 代理的入口（Codex/Cursor/Gemini CLI 等自动读取）
 SETUP.md                  # 首次环境安装手册（Claude 自己照着装）
 install.sh                # 一键安装（kit 落位 + skill 装入 Claude Code）
 skill/hf-video/           # Claude Code skill（任何目录说"做个视频"即可触发）
@@ -82,10 +93,10 @@ tools/
 
 ## 环境要求
 
-- macOS **或 Windows 11** + [Claude Code](https://claude.com/claude-code)
+- macOS **或 Windows 10 / 11** + 一个 AI 编程代理（推荐 [Claude Code](https://claude.com/claude-code)，其他代理见上节）
 - Node.js ≥ 18、Python 3、ffmpeg（安装手册会带着装：macOS 读 `SETUP.md`，Windows 读 `SETUP-WINDOWS.md`）
 - 模式 B 额外：mediapipe / opencv / faster-whisper（可选，不用模式 B 不装；Windows 建议 Python 3.11/3.12）
-- ⚠️ Windows 11 支持为**社区首版**：跨平台适配已做（字体候选链 / 双平台命令 / install.ps1），
+- ⚠️ Windows 支持为**社区首版**（Win10 需 PowerShell 5.1+，自带即可）：跨平台适配已做（字体候选链 / 双平台命令 / install.ps1），
   未经真机完整验证，遇到问题提 issue 或群里反馈，会快速修
 
 ## 声明与边界

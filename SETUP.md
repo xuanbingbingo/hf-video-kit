@@ -1,13 +1,13 @@
-# 首次环境安装 · macOS 版（Claude Code 执行手册）
+# 首次环境安装 · macOS 版（AI 代理执行手册）
 
-> Windows 11 用户请读 **SETUP-WINDOWS.md**。
+> Windows 10 / 11 用户请读 **SETUP-WINDOWS.md**。
 
-> 用户把本目录放好后，对 Claude Code 说："读 SETUP.md，把环境装好"。
-> 以下步骤全部由 Claude 自己执行和验证，每步失败先自行排查，解决不了再问用户。
+> 用户把本目录放好后，对 Claude Code（或你的 AI 代理，见 AGENTS.md）说："读 SETUP.md，把环境装好"。
+> 以下步骤全部由代理自己执行和验证，每步失败先自行排查，解决不了再问用户。
 
 ## 前置
 
-- macOS + 已安装 Claude Code
+- macOS + 一个 AI 编程代理（推荐 Claude Code；Codex / Cursor / Hermes 等见 AGENTS.md）
 - 网络可访问 npm registry 和 jsdelivr CDN（国内网络若 npm 慢，换源 registry.npmmirror.com）
 
 ## 步骤
@@ -17,7 +17,8 @@
 node -v
 ffmpeg -version || brew install ffmpeg
 
-# 2. HyperFrames 官方技能包（装完提醒用户重启一次 Claude Code）
+# 2. HyperFrames 官方技能包（装完提醒用户重启一次 Claude Code；非 Claude Code 代理可跳过此步，
+#    渲染规则 CLAUDE.md 已自带，渲染命令 npx hyperframes 与代理无关）
 npx skills add heygen-com/hyperframes
 
 # 3. 配音 venv（在 kit 的 tools/ 目录下建）

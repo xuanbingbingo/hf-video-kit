@@ -1,6 +1,6 @@
-# 首次环境安装 · Windows 11 版（Claude Code 执行手册）
+# 首次环境安装 · Windows 10 / 11 版（AI 代理执行手册）
 
-> 用户把本目录放好后，对 Claude Code 说："读 SETUP-WINDOWS.md，把环境装好"。
+> 用户把本目录放好后，对 Claude Code（或你的 AI 代理，见 AGENTS.md）说："读 SETUP-WINDOWS.md，把环境装好"。
 > 以下步骤全部由 Claude 自己执行和验证（PowerShell），每步失败先自行排查，解决不了再问用户。
 >
 > ⚠️ **Windows 支持为社区首版**：核心链路已做跨平台适配（字体候选链/命令双平台/安装脚本），
@@ -8,7 +8,9 @@
 
 ## 前置
 
-- Windows 11 + 已安装 Claude Code
+- Windows 10 / 11 + 一个 AI 编程代理（推荐 Claude Code；Codex / Cursor / Hermes 等见 AGENTS.md）
+- Win10 用户：`winget` 依赖「应用安装程序（App Installer）」，Win11 自带，Win10 从 Microsoft Store
+  装一下即可；实在没有 winget，Node / Python / ffmpeg 去官网手动下载安装效果相同
 - 网络可访问 npm registry 和 jsdelivr CDN（npm 慢就换源 registry.npmmirror.com）
 
 ## 步骤（PowerShell 执行）
@@ -19,7 +21,7 @@ node -v    # 没有: winget install OpenJS.NodeJS.LTS
 python --version    # 没有: winget install Python.Python.3.12
 ffmpeg -version     # 没有: winget install Gyan.FFmpeg   （装完重开终端让 PATH 生效）
 
-# 2. HyperFrames 官方技能包（装完提醒用户重启一次 Claude Code）
+# 2. HyperFrames 官方技能包（装完提醒用户重启一次 Claude Code；非 Claude Code 代理可跳过此步）
 npx skills add heygen-com/hyperframes
 
 # 3. 字体（渲染大标题和封面都要）：思源宋体 Heavy
@@ -72,4 +74,6 @@ tools\.venv\Scripts\modelscope download --model keepitsimple/faster-whisper-larg
   也可用环境变量 `HF_FONT_SERIF` / `HF_FONT_MONO` 指定任意字体文件路径
 - **打开文件**：macOS 的 `open` 在 Windows 对应 `start`（CLAUDE.md 流程里所有"open 打开"按此替换）
 - **路径**：venv 可执行文件在 `.venv\Scripts\`（macOS 是 `.venv/bin/`）
+- **PowerShell 5.1（Win10 默认）**：`Out-File -Encoding utf8` 写出的文件带 BOM，kit 脚本已兼容
+  （文案统一按 utf-8-sig 读取），无需特殊处理；PowerShell 7 不带 BOM 同样兼容
 - 剪映 SAMI 为非官方接口，仅供个人学习研究，可能随时失效；失效自动换 edge-tts 音色

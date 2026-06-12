@@ -73,7 +73,7 @@ def anchor_time(chars, plain, sub, occ=1, edge="start"):
 
 
 if __name__ == "__main__":
-    words = json.load(open(sys.argv[1]))
+    words = json.load(open(sys.argv[1], encoding='utf-8'))
     if len(sys.argv) > 2 and sys.argv[2] == "--find":
         chars, plain = build_chars(words)
         occ = int(sys.argv[4]) if len(sys.argv) > 4 else 1
@@ -82,9 +82,9 @@ if __name__ == "__main__":
               f"end={anchor_time(chars, plain, sub, occ, 'end')}")
     else:
         out = sys.argv[2]
-        fixes = json.load(open(sys.argv[3])) if len(sys.argv) > 3 else []
+        fixes = json.load(open(sys.argv[3], encoding='utf-8')) if len(sys.argv) > 3 else []
         chars, plain = build_chars(words, fixes)
-        with open(out, "w") as f:
+        with open(out, "w", encoding="utf-8") as f:
             f.write("window.__TRANSCRIPT = "
                     + json.dumps(chars, ensure_ascii=False) + ";\n")
         print(f"{len(chars)} 字 -> {out}")

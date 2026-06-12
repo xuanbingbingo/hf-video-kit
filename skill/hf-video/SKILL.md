@@ -13,7 +13,7 @@ description: 口播视频自动生产线。当用户说"做个视频""出片""�
 用户说"用我的声音/真人版"或给了真人口播录像 → 模式 B（真人原声，工具在 tools/real/）。
 
 若 `~/hf-video-kit/` 不存在，告知用户先 `git clone https://github.com/xuanbingbingo/hf-video-kit.git` 并运行 `install.sh`（Windows: `install.ps1`）。
-若 `~/hf-video-kit/tools/.venv` 不存在，先装环境：macOS 按 `SETUP.md`，Windows 11 按 `SETUP-WINDOWS.md`。
+若 `~/hf-video-kit/tools/.venv` 不存在，先装环境：macOS 按 `SETUP.md`，Windows 10/11 按 `SETUP-WINDOWS.md`。
 
 ## 执行摘要（细节以 CLAUDE.md 为准）
 

@@ -1,6 +1,6 @@
 # hf-video-kit — 口播视频自动生产线
 
-> 本文件是给 Claude Code 的**常驻工作指令**。用户在这个目录说"做个视频/出片/把这篇文案做成视频"时，
+> 本文件是给 AI 编程代理的**常驻工作指令**（默认 Claude Code，Codex / Cursor / Hermes 等从 AGENTS.md 进入后同样以本文件为准）。用户在这个目录说"做个视频/出片/把这篇文案做成视频"时，
 > 严格按本文件流程执行，不需要用户重复交代任何工法细节。
 
 ## 你的角色
@@ -20,9 +20,10 @@
 
 ```
 hf-video-kit/
-├── CLAUDE.md                 # 本文件
+├── CLAUDE.md                 # 本文件（所有代理通用的规则书）
+├── AGENTS.md                 # 非 Claude Code 代理的入口
 ├── SETUP.md                  # 首次环境安装·macOS（用户说"装环境"时照此执行）
-├── SETUP-WINDOWS.md          # 首次环境安装·Windows 11（社区首版）
+├── SETUP-WINDOWS.md          # 首次环境安装·Windows 10/11（社区首版）
 ├── tools/
 │   ├── gen_voice_timed.py    # ★ 配音+字级时间轴一步出（逐句合成，零 ASR）
 │   ├── hfvoice.py            # 单句配音 CLI（试音色用）

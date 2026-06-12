@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""按句切分合成配音，时间轴在合成时精确已知（零 ASR）。引擎无关。
+r"""按句切分合成配音，时间轴在合成时精确已知（零 ASR）。引擎无关。
 
 文案按标点拆短句 → 逐句合成（kokoro 本地 / sami 剪映联网）→ 掐头去尾静音
 → 按固定停顿拼接。输出 voice.wav + 字级 transcript.json。
@@ -45,7 +45,7 @@ VC = voices[VOICE_NAME]
 ENGINE, VOICE_ID = VC['engine'], VC['id']
 print(f'音色: {VOICE_NAME} ({ENGINE}/{VOICE_ID})')
 
-raw = open(SCRIPT, encoding='utf-8').read()
+raw = open(SCRIPT, encoding='utf-8-sig').read()
 text = ''.join(l.strip() for l in raw.splitlines() if l.strip() and not l.startswith('#'))
 
 parts = re.split(r'([。！？；…，、])', text)

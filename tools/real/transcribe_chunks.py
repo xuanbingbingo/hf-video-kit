@@ -104,5 +104,5 @@ for s, e in chunks:
     print(f"[{s:7.2f}-{e:7.2f}] {txt}")
     words.extend(chunk_words)
 
-json.dump(words, open(OUT, "w"), ensure_ascii=False)
+json.dump(words, open(OUT, "w", encoding="utf-8"), ensure_ascii=False)
 print(f"\nTOTAL {len(words)} words -> {OUT}")

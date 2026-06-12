@@ -22,7 +22,7 @@ LEAD_IN = 0.25      # 片头第一个字前保留
 SUSTAIN = 0.12      # 能量低于阈值需持续此时长才算静音
 FPS = 30
 
-words = json.load(open(WORDS_IN))
+words = json.load(open(WORDS_IN, encoding='utf-8'))
 probe = subprocess.run(["ffprobe", "-v", "quiet", "-print_format", "json",
                         "-show_format", SRC], capture_output=True, text=True)
 DUR = float(json.loads(probe.stdout)["format"]["duration"])
@@ -104,7 +104,7 @@ for i, (s, e) in enumerate(keeps):
 lines.append("".join(f"{v}{a}" for v, a in zip(pv, pa))
              + f"concat=n={len(keeps)}:v=1:a=1[vo][ao]")
 fname = DST.rsplit(".", 1)[0] + "_filter.txt"
-with open(fname, "w") as f:
+with open(fname, "w", encoding="utf-8") as f:
     f.write("\n".join(lines))
 r = subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", SRC,
                     "-filter_complex_script", fname,
@@ -120,7 +120,7 @@ def remap(t):
 
 json.dump([{"text": w["text"], "start": remap(w["start"]),
             "end": remap(w["end"])} for w in words],
-          open(WORDS_OUT, "w"), ensure_ascii=False)
+          open(WORDS_OUT, "w", encoding="utf-8"), ensure_ascii=False)
 
 probe2 = subprocess.run(["ffprobe", "-v", "quiet", "-print_format", "json",
                          "-show_format", DST], capture_output=True, text=True)

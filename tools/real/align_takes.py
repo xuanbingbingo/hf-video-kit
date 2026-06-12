@@ -29,7 +29,7 @@ FPS = 30
 
 # ---------- 读原稿（丢 # 注释行与空行） ----------
 SCRIPT = "".join(
-    line.strip() for line in open(SCRIPT_MD)
+    line.strip() for line in open(SCRIPT_MD, encoding='utf-8-sig')
     if line.strip() and not line.strip().startswith("#"))
 
 PUNCT = "，。！？、；…：,.!?;: 　"
@@ -53,7 +53,7 @@ for ch in SCRIPT:
 M = len(script_chars)
 print(f"script chars: {M}")
 
-words = json.load(open(WORDS_IN))
+words = json.load(open(WORDS_IN, encoding='utf-8'))
 tchars = []
 for wi, w in enumerate(words):
     txt = w["text"]
@@ -229,7 +229,7 @@ def remap(t):
 out = [{"text": script_chars[ii]["ch"] + script_chars[ii]["punct"],
         "start": round(remap(times[ii][0]), 3),
         "end": round(remap(times[ii][1]), 3)} for ii in range(M)]
-json.dump(out, open(CHARS_OUT, "w"), ensure_ascii=False)
+json.dump(out, open(CHARS_OUT, "w", encoding="utf-8"), ensure_ascii=False)
 print(f"chars -> {CHARS_OUT}")
 
 if DRY:
@@ -244,7 +244,7 @@ for k, (s, e) in enumerate(spans):
 lines.append("".join(f"{v}{a}" for v, a in zip(pv, pa))
              + f"concat=n={len(spans)}:v=1:a=1[vo][ao]")
 fname = DST.rsplit(".", 1)[0] + "_filter.txt"
-open(fname, "w").write("\n".join(lines))
+open(fname, "w", encoding="utf-8").write("\n".join(lines))
 r = subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", VIDEO,
                     "-filter_complex_script", fname,
                     "-map", "[vo]", "-map", "[ao]",

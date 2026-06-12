@@ -109,5 +109,5 @@ out = {
                   "dur": round(e - s, 2)} for s, e in merged],
     "total_cut": round(sum(e - s for s, e in merged), 2),
 }
-json.dump(out, open(OUT, "w"), ensure_ascii=False, indent=2)
+json.dump(out, open(OUT, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
 print(json.dumps(out, ensure_ascii=False, indent=2))
