@@ -5,7 +5,7 @@
   1. 整个 project-scaffold 目录拷贝为 episodes/episode-NN/hf-project/
   2. 把配音 voice.wav 放进 assets/，字级时间戳写成 transcript.js（window.__TRANSCRIPT = [...]）
   3. 替换 DUR、audio data-duration、示例场景；按 CLAUDE.md 场景判定表逐段添加 slide
-  4. 每个场景边界调用 glitchAt(t)；字幕系统已内置无需改动
+  4. 场景显隐用 showSlide(id,t0,t1) 无闪淡入淡出（禁 glitch/白闪）；字幕系统已内置无需改动
   铁律：有时序元素必须 data-start/data-duration/data-track-index + class="clip"；
        时间轴 paused 并注册 window.__timelines["main"]；禁止 Date.now()/Math.random()
 -->
@@ -50,14 +50,6 @@
       .quote-bar { padding: 30px 40px; border-left: 8px solid #d9a441; background: rgba(217,164,65,0.07);
         font-family: "Songti SC", "Source Han Serif SC", "思源宋体", "Noto Serif SC", "SimSun", serif; font-weight: 900; line-height: 1.45; }
 
-      /* ===== glitch 转场层 ===== */
-      #fx { position: absolute; inset: 0; z-index: 60; pointer-events: none; }
-      .fx-slice { position: absolute; left: -40px; right: -40px; height: 34%; background: rgba(18,22,30,0.92); opacity: 0; }
-      .fx-slice.a { top: 0; border-bottom: 3px solid rgba(217,164,65,0.5); }
-      .fx-slice.b { top: 33%; background: rgba(217,164,65,0.10); }
-      .fx-slice.c { top: 66%; border-top: 3px solid rgba(111,179,224,0.4); }
-      .fx-flash { position: absolute; inset: 0; background: #e9e4d8; opacity: 0; }
-
       /* ===== 逐字点亮字幕 ===== */
       #captions { position: absolute; bottom: 380px; left: 50px; width: 980px; text-align: center; z-index: 50; height: 100px; pointer-events: none; }
       .cap-group { position: absolute; left: 0; right: 0; top: 0; font-size: 56px; font-weight: 600; letter-spacing: 0.04em;
@@ -85,13 +77,6 @@
           <div class="kicker" id="s1-kicker">KICKER · 小标签</div>
           <h1 class="h-serif" id="s1-title" style="font-size: 96px">大标题<br /><span class="amber">强调词</span></h1>
         </div>
-      </div>
-
-      <div id="fx">
-        <div class="fx-slice a" id="fx-a"></div>
-        <div class="fx-slice b" id="fx-b"></div>
-        <div class="fx-slice c" id="fx-c"></div>
-        <div class="fx-flash" id="fx-flash"></div>
       </div>
 
       <div id="captions"></div>
@@ -167,18 +152,16 @@
       tl.to(".bg-glow", { scale: 1.12, duration: 3.4, ease: "sine.inOut", yoyo: true, repeat: 2 }, 0); /* TODO repeat */
       tl.to("#ghost-word", { x: -60, duration: DUR, ease: "none" }, 0);
 
-      /* ===== glitch 转场：每个场景边界调用一次 ===== */
-      function glitchAt(t) {
-        tl.fromTo("#fx-a", { opacity: 0, x: 0 }, { opacity: 0.95, x: -46, duration: 0.13, ease: "power2.in" }, t - 0.13);
-        tl.to("#fx-a", { opacity: 0, x: 30, duration: 0.18, ease: "power2.out" }, t);
-        tl.fromTo("#fx-b", { opacity: 0, x: 0 }, { opacity: 0.9, x: 52, duration: 0.13, ease: "power2.in" }, t - 0.13);
-        tl.to("#fx-b", { opacity: 0, x: -34, duration: 0.18, ease: "power2.out" }, t);
-        tl.fromTo("#fx-c", { opacity: 0, x: 0 }, { opacity: 0.95, x: -38, duration: 0.13, ease: "power2.in" }, t - 0.13);
-        tl.to("#fx-c", { opacity: 0, x: 24, duration: 0.18, ease: "power2.out" }, t);
-        tl.fromTo("#fx-flash", { opacity: 0 }, { opacity: 0.18, duration: 0.08, ease: "none" }, t - 0.04);
-        tl.to("#fx-flash", { opacity: 0, duration: 0.22, ease: "power2.out" }, t + 0.04);
+      /* ===== 场景显隐（转场=无闪淡入淡出，禁 glitch 切片/白闪——用户验收定论） ===== */
+      function showSlide(id, t0, t1) {
+        tl.set("#" + id, { visibility: "visible" }, t0);
+        tl.fromTo("#" + id, { opacity: 0 }, { opacity: 1, duration: 0.45, ease: "sine.out" }, t0);
+        if (t1 < DUR - 0.2) {
+          tl.to("#" + id, { opacity: 0, duration: 0.35, ease: "sine.in" }, t1 - 0.35);
+          tl.set("#" + id, { visibility: "hidden" }, t1);
+        }
       }
-      // 示例：[12.3, 45.6].forEach(glitchAt);
+      // 示例：showSlide("slide-1", 0, 12.3); showSlide("slide-2", 12.3, 45.6);
 
       /* ===== 示例场景入场（按场景扩展） ===== */
       tl.fromTo("#s1-kicker", { opacity: 0, letterSpacing: "0.6em" }, { opacity: 1, letterSpacing: "0.28em", duration: 0.7, ease: "expo.out" }, 0.3);
