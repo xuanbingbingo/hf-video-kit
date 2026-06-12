@@ -35,14 +35,45 @@ BG = (18, 22, 30)
 INK = (233, 228, 216)
 AMBER = (217, 164, 65)
 DIM = (140, 151, 168)
-SONGTI = "/System/Library/Fonts/Supplemental/Songti.ttc"  # index 0=SC Black 1=SC Bold
-MENLO = "/System/Library/Fonts/Menlo.ttc"
+
+# 跨平台字体解析：按候选链找第一个存在的；可用环境变量 HF_FONT_SERIF / HF_FONT_MONO 覆盖
+_HOME = os.path.expanduser("~")
+_WIN_FONTS = os.path.join(os.environ.get("WINDIR", r"C:\Windows"), "Fonts")
+_WIN_USER_FONTS = os.path.join(_HOME, "AppData", "Local", "Microsoft", "Windows", "Fonts")
+SERIF_CANDIDATES = [
+    os.environ.get("HF_FONT_SERIF", ""),
+    "/System/Library/Fonts/Supplemental/Songti.ttc",          # macOS 宋体（index 0=SC Black）
+    os.path.join(_WIN_USER_FONTS, "SourceHanSerifSC-Heavy.otf"),  # Win 思源宋体（用户级安装）
+    os.path.join(_WIN_FONTS, "SourceHanSerifSC-Heavy.otf"),       # Win 思源宋体（系统级安装）
+    os.path.join(_WIN_FONTS, "NotoSerifSC-Black.otf"),
+    os.path.join(_WIN_FONTS, "msyhbd.ttc"),                       # 微软雅黑 Bold（兜底，黑体观感）
+    os.path.join(_WIN_FONTS, "simsun.ttc"),                       # 宋体（无粗体，最后兜底）
+]
+MONO_CANDIDATES = [
+    os.environ.get("HF_FONT_MONO", ""),
+    "/System/Library/Fonts/Menlo.ttc",                            # macOS
+    os.path.join(_WIN_FONTS, "CascadiaCode.ttf"),
+    os.path.join(_WIN_FONTS, "consola.ttf"),                      # Consolas
+]
+
+def _pick(cands, kind):
+    for p in cands:
+        if p and os.path.exists(p):
+            return p
+    sys.exit(f"找不到{kind}字体，请安装思源宋体或用 HF_FONT_SERIF/HF_FONT_MONO 指定字体文件路径")
+
+SERIF = _pick(SERIF_CANDIDATES, "衬线")
+MONO = _pick(MONO_CANDIDATES, "等宽")
+_SERIF_TTC = SERIF.lower().endswith(".ttc")
 
 def F(size, idx=0):
-    return ImageFont.truetype(SONGTI, size, index=idx)
+    # macOS Songti.ttc 用 index 区分字重（0=Black 1=Bold）；单字重字体文件忽略 index
+    if _SERIF_TTC and "songti" in SERIF.lower():
+        return ImageFont.truetype(SERIF, size, index=idx)
+    return ImageFont.truetype(SERIF, size, index=0)
 
 def FM(size):
-    return ImageFont.truetype(MENLO, size, index=0)
+    return ImageFont.truetype(MONO, size, index=0)
 
 def split2(s):
     a, _, b = s.partition("|")

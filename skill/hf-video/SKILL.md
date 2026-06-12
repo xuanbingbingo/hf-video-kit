@@ -12,8 +12,8 @@ description: 口播视频自动生产线。当用户说"做个视频""出片""�
 **先按 CLAUDE.md 顶部「模式判定」选模式**：默认模式 A（AI 原生 TTS）；
 用户说"用我的声音/真人版"或给了真人口播录像 → 模式 B（真人原声，工具在 tools/real/）。
 
-若 `~/hf-video-kit/` 不存在，告知用户先 `git clone https://github.com/xuanbingbingo/hf-video-kit.git` 并运行 `install.sh`。
-若 `~/hf-video-kit/tools/.venv` 不存在，先按 `~/hf-video-kit/SETUP.md` 装环境。
+若 `~/hf-video-kit/` 不存在，告知用户先 `git clone https://github.com/xuanbingbingo/hf-video-kit.git` 并运行 `install.sh`（Windows: `install.ps1`）。
+若 `~/hf-video-kit/tools/.venv` 不存在，先装环境：macOS 按 `SETUP.md`，Windows 11 按 `SETUP-WINDOWS.md`。
 
 ## 执行摘要（细节以 CLAUDE.md 为准）
 
@@ -24,7 +24,7 @@ description: 口播视频自动生产线。当用户说"做个视频""出片""�
 4. **场景路由**：新 episode 建在 `~/hf-video-kit/episodes/episode-NN/`；
    拷贝 `~/hf-video-kit/tools/project-scaffold/` 为其 hf-project/，按判定表逐段加场景
 5. **锚点**：场景边界=句子 start，段内元素卡关键词出口瞬间；改一字=全片锚点语义重算
-6. **渲染**：validate → snapshot 抽帧自检 → `npx --yes hyperframes@0.6.84 render` → **必须 open 打开**
+6. **渲染**：validate → snapshot 抽帧自检 → `npx --yes hyperframes@0.6.84 render` → **必须 open（Win: start）打开**
 
 ## 硬规则速记（违反不许出片）
 

@@ -24,7 +24,7 @@
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
       html, body { margin: 0; width: 1080px; height: 1920px; overflow: hidden; background: #0f131b; }
-      body { font-family: "PingFang SC", "Hiragino Sans GB", sans-serif; color: #e9e4d8; }
+      body { font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "微软雅黑", sans-serif; color: #e9e4d8; }
       [data-composition-id="main"] { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #12161e; }
 
       /* ===== 视觉规范底座（深色 + 琥珀金，见 CLAUDE.md） ===== */
@@ -35,10 +35,10 @@
       .bg-grid { position: absolute; inset: 0;
         background-image: linear-gradient(rgba(233,228,216,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(233,228,216,0.045) 1px, transparent 1px);
         background-size: 90px 90px; pointer-events: none; }
-      .ghost-word { position: absolute; bottom: 200px; left: 36px; font-family: "Songti SC", serif; font-weight: 900;
+      .ghost-word { position: absolute; bottom: 200px; left: 36px; font-family: "Songti SC", "Source Han Serif SC", "思源宋体", "Noto Serif SC", "SimSun", serif; font-weight: 900;
         font-size: 150px; letter-spacing: 0.04em; color: rgba(233,228,216,0.05); white-space: nowrap; pointer-events: none; line-height: 1; }
       .top-bar { position: absolute; top: 150px; left: 60px; right: 60px; display: flex; justify-content: space-between; align-items: center;
-        font-family: "SF Mono", Menlo, monospace; font-size: 22px; letter-spacing: 0.1em; color: #8c97a8; }
+        font-family: "SF Mono", Menlo, "Cascadia Code", Consolas, monospace; font-size: 22px; letter-spacing: 0.1em; color: #8c97a8; }
       .top-bar .tag { color: #d9a441; }
       .top-rule { position: absolute; top: 196px; left: 60px; right: 60px; height: 2px;
         background: linear-gradient(90deg, rgba(217,164,65,0.7), rgba(233,228,216,0.12)); transform-origin: left center; }
@@ -48,12 +48,12 @@
       .slide { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; gap: 36px; padding: 16px 4px; opacity: 0; visibility: hidden; }
 
       /* 常用元件 */
-      .kicker { font-family: "SF Mono", Menlo, monospace; font-size: 26px; letter-spacing: 0.28em; color: #d9a441; }
-      .h-serif { font-family: "Songti SC", serif; font-weight: 900; line-height: 1.22; margin: 0; letter-spacing: 0.02em; }
+      .kicker { font-family: "SF Mono", Menlo, "Cascadia Code", Consolas, monospace; font-size: 26px; letter-spacing: 0.28em; color: #d9a441; }
+      .h-serif { font-family: "Songti SC", "Source Han Serif SC", "思源宋体", "Noto Serif SC", "SimSun", serif; font-weight: 900; line-height: 1.22; margin: 0; letter-spacing: 0.02em; }
       .amber { color: #d9a441; }
       .card { border: 2px solid rgba(233,228,216,0.16); border-radius: 20px; background: rgba(233,228,216,0.045); }
       .quote-bar { padding: 30px 40px; border-left: 8px solid #d9a441; background: rgba(217,164,65,0.07);
-        font-family: "Songti SC", serif; font-weight: 900; line-height: 1.45; }
+        font-family: "Songti SC", "Source Han Serif SC", "思源宋体", "Noto Serif SC", "SimSun", serif; font-weight: 900; line-height: 1.45; }
 
       /* ===== 真人视频：开场全屏 → 右下圆窗 PIP ===== */
       #face-pos { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; z-index: 40;

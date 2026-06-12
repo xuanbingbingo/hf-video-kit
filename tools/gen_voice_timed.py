@@ -6,7 +6,7 @@
 
 用法: gen_voice_timed.py <script.md> <voice.wav> <transcript.json> [音色名]
 音色名 = 同目录 voices.json 里的名字（如 沉稳解说 / 熊二），缺省沉稳解说。
-须用本 kit 的 venv 运行: <kit>/tools/.venv/bin/python
+须用本 kit 的 venv 运行: <kit>/tools/.venv/bin/python（Windows: tools\.venv\Scripts\python）
 """
 import asyncio
 import json

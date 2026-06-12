@@ -1,4 +1,6 @@
-# 首次环境安装（Claude Code 执行手册）
+# 首次环境安装 · macOS 版（Claude Code 执行手册）
+
+> Windows 11 用户请读 **SETUP-WINDOWS.md**。
 
 > 用户把本目录放好后，对 Claude Code 说："读 SETUP.md，把环境装好"。
 > 以下步骤全部由 Claude 自己执行和验证，每步失败先自行排查，解决不了再问用户。

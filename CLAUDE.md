@@ -21,7 +21,8 @@
 ```
 hf-video-kit/
 ├── CLAUDE.md                 # 本文件
-├── SETUP.md                  # 首次环境安装（用户说"装环境"时照此执行）
+├── SETUP.md                  # 首次环境安装·macOS（用户说"装环境"时照此执行）
+├── SETUP-WINDOWS.md          # 首次环境安装·Windows 11（社区首版）
 ├── tools/
 │   ├── gen_voice_timed.py    # ★ 配音+字级时间轴一步出（逐句合成，零 ASR）
 │   ├── hfvoice.py            # 单句配音 CLI（试音色用）
@@ -45,7 +46,7 @@ hf-video-kit/
 ③ 配音+时间轴 tools/.venv/bin/python tools/gen_voice_timed.py script.md assets/voice.wav assets/transcript_chars.json 沉稳解说
 ④ 场景路由   拷贝 tools/project-scaffold/ 为 episodes/episode-NN/hf-project/ → 按句切段 → 逐段查下方判定表加场景（骨架已含字幕系统/转场层/铁律注释，照 TODO 替换即可）
 ⑤ 锚点编排   场景边界 = 句子 start；段内元素卡着关键词说出口的瞬间出现（字级时间戳子串定位）
-⑥ 渲染自检   hyperframes validate → snapshot 抽帧检查每个场景 → render → speedup.py 出 1.2 倍速版（见「交付设置」）→ open 打开给用户
+⑥ 渲染自检   hyperframes validate → snapshot 抽帧检查每个场景 → render → speedup.py 出 1.2 倍速版（见「交付设置」）→ open（Win: start）打开给用户
 ```
 
 句级/字级锚点提取方法：transcript_chars.json 里每个字有 {text,start,end}，标点附在字上；
@@ -72,7 +73,7 @@ hf-video-kit/
 ⑥ 场景路由   拷贝 tools/project-scaffold-real/ → 按模式 A 判定表加场景；
              T_PIP = 第一个「画面接管」语义的字的 start（prep_transcript.py --find 查时间）；
              PIP 圆窗 object-position Y 必须 mediapipe 实测脸中心（骨架注释里有公式）
-⑦ 渲染自检   同模式 A：validate → snapshot 逐场景核对 → render → speedup.py 出 1.2 倍速版 → open
+⑦ 渲染自检   同模式 A：validate → snapshot 逐场景核对 → render → speedup.py 出 1.2 倍速版 → open（Win: start）
 ```
 
 模式 B 硬规则（每条都是踩过的坑，违反不许出片）：
@@ -122,7 +123,7 @@ hf-video-kit/
 ## 视觉规范（所有场景统一）
 
 - 背景 `#12161e` + 网格纹理 + 琥珀金辉光；强调色 `#d9a441`；正文 `#e9e4d8`
-- 大标题：宋体（Songti SC）900；标签/编号：SF Mono
+- 大标题：宋体 900（macOS: Songti SC / Windows: 思源宋体，脚手架字体栈已带回退链）；标签/编号：SF Mono（Win 回退 Consolas）
 - 竖版 1080×1920：顶部 150px 起、底部 380px 留给字幕+平台 UI；舞台 top 250 / 宽 952
 - 字幕：底部居中逐字点亮（暗→亮白，关键词金色），56px，每组 ≤11 字，**显示文本去掉全部标点（含逗号顿号）**
 - 横版 1920×1080：对比卡可左右排；字幕 50px 居中
@@ -130,7 +131,7 @@ hf-video-kit/
 ## 交付设置（模式 A/B 通用）
 
 - **默认倍速 1.2**：渲染出原速成片后，跑 `tools/.venv/bin/python tools/speedup.py 成片.mp4`
-  生成 `成片-x1.2.mp4`（视频 setpts + 音频 atempo 变速不变调），**两个版本都保留，open 打开 1.2 倍速版**
+  生成 `成片-x1.2.mp4`（视频 setpts + 音频 atempo 变速不变调），**两个版本都保留，open（Win: start）打开 1.2 倍速版**
 - 用户说「原速 / 不要倍速」则跳过；要其他倍速传第三个参数（范围 0.5~2.0）
 - 倍速是渲染后处理，禁止改 TTS 语速或母带速度来实现（会牵连全部时间锚点）
 - 本地若存在 `private/` 目录（作者自用运营层，不入库），渲染交付后按 `private/PUBLISH-WORKFLOW.md` 继续发布物料流程
@@ -141,7 +142,7 @@ hf-video-kit/
 2. **音色默认「沉稳解说」**（剪映 SAMI）；⚠️ SAMI 是非官方接口可能失效，失效时换 edge 音色（如 晓晓/云扬）并告知用户
 3. **多音字先扫后配**；**字幕零标点**
 4. **数据必须真实**：联网核实+画面标 SOURCE；编造的演示数据明标 DEMO；虚构贴文标"示意"
-5. **渲染前抽帧自检**（validate + snapshot 关键帧逐场景看排版和同步），**渲染后必须 open 打开**
+5. **渲染前抽帧自检**（validate + snapshot 关键帧逐场景看排版和同步），**渲染后必须 open（Win: start）打开**
 
 ## ⚠️ 最大的坑：配音改一个字 = 全片时间轴偏移
 

@@ -29,12 +29,19 @@
 ## 怎么用（三步，前两步只做一次）
 
 ```bash
+# macOS
 git clone https://github.com/xuanbingbingo/hf-video-kit.git
 cd hf-video-kit && bash install.sh   # kit 落位 ~/hf-video-kit + 工作流装进 Claude Code
 ```
 
+```powershell
+# Windows 11（PowerShell）
+git clone https://github.com/xuanbingbingo/hf-video-kit.git
+cd hf-video-kit; powershell -ExecutionPolicy Bypass -File .\install.ps1
+```
+
 1. 装完**重启 Claude Code**
-2. 对 Claude 说：**「读 ~/hf-video-kit/SETUP.md，把环境装好」**——等它装完、放测试配音给你听、渲出 hello world（约 10 分钟）
+2. 对 Claude 说：**「读 ~/hf-video-kit/SETUP.md，把环境装好」**（Windows 说：**「读 SETUP-WINDOWS.md，把环境装好」**）——等它装完、放测试配音给你听、渲出 hello world（约 10 分钟）
 3. 以后每次做视频，在任何目录说：
    - 模式 A：**「做个视频」+ 贴上文案**
    - 模式 B：**「我要用自己的声音出片」**——Claude 会先给你文案和念稿指引，你录完把视频发回来
@@ -75,9 +82,11 @@ tools/
 
 ## 环境要求
 
-- macOS + [Claude Code](https://claude.com/claude-code)
-- Node.js ≥ 18、Python 3、ffmpeg（SETUP.md 会带着装）
-- 模式 B 额外：mediapipe / opencv / faster-whisper（可选，不用模式 B 不装）
+- macOS **或 Windows 11** + [Claude Code](https://claude.com/claude-code)
+- Node.js ≥ 18、Python 3、ffmpeg（安装手册会带着装：macOS 读 `SETUP.md`，Windows 读 `SETUP-WINDOWS.md`）
+- 模式 B 额外：mediapipe / opencv / faster-whisper（可选，不用模式 B 不装；Windows 建议 Python 3.11/3.12）
+- ⚠️ Windows 11 支持为**社区首版**：跨平台适配已做（字体候选链 / 双平台命令 / install.ps1），
+  未经真机完整验证，遇到问题提 issue 或群里反馈，会快速修
 
 ## 声明与边界
 

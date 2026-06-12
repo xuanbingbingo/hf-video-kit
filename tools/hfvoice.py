@@ -114,6 +114,6 @@ def main():
 
 if __name__ == "__main__":
     if not shutil.which("ffmpeg"):
-        print("❌ 需要 ffmpeg（brew install ffmpeg）")
+        print("❌ 需要 ffmpeg（macOS: brew install ffmpeg / Win: winget install Gyan.FFmpeg）")
         sys.exit(1)
     sys.exit(main())
