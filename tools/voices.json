@@ -1,0 +1,133 @@
+{
+  "_说明": "hfvoice 音色注册表。engine: sami=剪映原生(联网,成片默认用「沉稳解说」) / edge=微软(联网,备用)。⚠️ sami 为非官方接口,可能随时失效,失效时换 edge 音色。alias 可当 --voice 用。",
+  "沉稳解说": {
+    "engine": "sami",
+    "id": "BV701_streaming",
+    "alias": [
+      "01"
+    ]
+  },
+  "解说小帅": {
+    "engine": "sami",
+    "id": "BV411_streaming",
+    "alias": [
+      "02",
+      "小帅"
+    ]
+  },
+  "舌尖解说": {
+    "engine": "sami",
+    "id": "zh_male_commentate_emo_neutral",
+    "alias": [
+      "04",
+      "舌尖"
+    ]
+  },
+  "悬疑解说": {
+    "engine": "sami",
+    "id": "zh_male_changtianyi_xuanyi",
+    "alias": [
+      "05",
+      "悬疑"
+    ]
+  },
+  "播音旁白": {
+    "engine": "sami",
+    "id": "zh_male_voplvyou",
+    "alias": [
+      "08",
+      "播音"
+    ]
+  },
+  "磁性男声": {
+    "engine": "sami",
+    "id": "zh_male_iclvop_zhangjinxiangnanzhu",
+    "alias": [
+      "12",
+      "磁性"
+    ]
+  },
+  "知识讲解": {
+    "engine": "sami",
+    "id": "BV102_streaming",
+    "alias": [
+      "16"
+    ]
+  },
+  "清亮男声": {
+    "engine": "sami",
+    "id": "zh_male_iclvop_xiaolinkepu",
+    "alias": [
+      "18"
+    ]
+  },
+  "温柔姐姐": {
+    "engine": "sami",
+    "id": "zh_female_inspirational",
+    "alias": [
+      "19"
+    ]
+  },
+  "新闻女主播": {
+    "engine": "sami",
+    "id": "zh_female_iclvop_dzyboyin",
+    "alias": [
+      "22",
+      "女主播"
+    ]
+  },
+  "甜美女声": {
+    "engine": "sami",
+    "id": "ICL_zh_female_basidigua2",
+    "alias": [
+      "23",
+      "甜美"
+    ]
+  },
+  "熊二": {
+    "engine": "sami",
+    "id": "zh_male_xionger_stream_gpu",
+    "alias": [
+      "25"
+    ]
+  },
+  "猴哥": {
+    "engine": "sami",
+    "id": "zh_male_sunwukong_clone2",
+    "alias": [
+      "26",
+      "悟空"
+    ]
+  },
+  "东北老铁": {
+    "engine": "sami",
+    "id": "BV021_streaming",
+    "alias": [
+      "27",
+      "老铁"
+    ]
+  },
+  "小孩": {
+    "engine": "sami",
+    "id": "zh_female_xiaopengyou",
+    "alias": [
+      "28",
+      "小朋友"
+    ]
+  },
+  "微软晓伊": {
+    "engine": "edge",
+    "id": "zh-CN-XiaoyiNeural",
+    "alias": [
+      "edge1",
+      "晓伊"
+    ]
+  },
+  "微软云扬": {
+    "engine": "edge",
+    "id": "zh-CN-YunyangNeural",
+    "alias": [
+      "edge2"
+    ]
+  }
+}

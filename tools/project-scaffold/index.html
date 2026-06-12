@@ -1,0 +1,203 @@
+<!doctype html>
+<!--
+  hf-video-kit 项目骨架（竖版 1080×1920）
+  使用方法（给 Claude 的指引）：
+  1. 整个 project-scaffold 目录拷贝为 episodes/episode-NN/hf-project/
+  2. 把配音 voice.wav 放进 assets/，字级时间戳写成 transcript.js（window.__TRANSCRIPT = [...]）
+  3. 替换 DUR、audio data-duration、示例场景；按 CLAUDE.md 场景判定表逐段添加 slide
+  4. 每个场景边界调用 glitchAt(t)；字幕系统已内置无需改动
+  铁律：有时序元素必须 data-start/data-duration/data-track-index + class="clip"；
+       时间轴 paused 并注册 window.__timelines["main"]；禁止 Date.now()/Math.random()
+-->
+<html lang="zh-CN" data-resolution="portrait">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <title>my-video</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="transcript.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { margin: 0; width: 1080px; height: 1920px; overflow: hidden; background: #0f131b; }
+      body { font-family: "PingFang SC", "Hiragino Sans GB", sans-serif; color: #e9e4d8; }
+      [data-composition-id="main"] { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #12161e; }
+
+      /* ===== 视觉规范底座（深色 + 琥珀金，见 CLAUDE.md） ===== */
+      .bg-glow { position: absolute; top: -300px; left: -320px; width: 1000px; height: 1000px; border-radius: 50%;
+        background: radial-gradient(circle, rgba(217,164,65,0.16) 0%, rgba(217,164,65,0.05) 42%, transparent 68%); pointer-events: none; }
+      .bg-glow-2 { position: absolute; bottom: -360px; right: -300px; width: 950px; height: 950px; border-radius: 50%;
+        background: radial-gradient(circle, rgba(90,122,154,0.14) 0%, transparent 62%); pointer-events: none; }
+      .bg-grid { position: absolute; inset: 0;
+        background-image: linear-gradient(rgba(233,228,216,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(233,228,216,0.045) 1px, transparent 1px);
+        background-size: 90px 90px; pointer-events: none; }
+      .ghost-word { position: absolute; bottom: 200px; left: 36px; font-family: "Songti SC", serif; font-weight: 900;
+        font-size: 150px; letter-spacing: 0.04em; color: rgba(233,228,216,0.05); white-space: nowrap; pointer-events: none; line-height: 1; }
+      .top-bar { position: absolute; top: 150px; left: 60px; right: 60px; display: flex; justify-content: space-between; align-items: center;
+        font-family: "SF Mono", Menlo, monospace; font-size: 22px; letter-spacing: 0.1em; color: #8c97a8; }
+      .top-bar .tag { color: #d9a441; }
+      .top-rule { position: absolute; top: 196px; left: 60px; right: 60px; height: 2px;
+        background: linear-gradient(90deg, rgba(217,164,65,0.7), rgba(233,228,216,0.12)); transform-origin: left center; }
+
+      /* 舞台：顶部 150px / 底部 380px 安全区 */
+      .stage { position: absolute; top: 250px; left: 64px; width: 952px; height: 1180px; }
+      .slide { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; gap: 36px; padding: 16px 4px; }
+
+      /* 常用元件 */
+      .kicker { font-family: "SF Mono", Menlo, monospace; font-size: 26px; letter-spacing: 0.28em; color: #d9a441; }
+      .h-serif { font-family: "Songti SC", serif; font-weight: 900; line-height: 1.22; margin: 0; letter-spacing: 0.02em; }
+      .amber { color: #d9a441; }
+      .card { border: 2px solid rgba(233,228,216,0.16); border-radius: 20px; background: rgba(233,228,216,0.045); }
+      .quote-bar { padding: 30px 40px; border-left: 8px solid #d9a441; background: rgba(217,164,65,0.07);
+        font-family: "Songti SC", serif; font-weight: 900; line-height: 1.45; }
+
+      /* ===== glitch 转场层 ===== */
+      #fx { position: absolute; inset: 0; z-index: 60; pointer-events: none; }
+      .fx-slice { position: absolute; left: -40px; right: -40px; height: 34%; background: rgba(18,22,30,0.92); opacity: 0; }
+      .fx-slice.a { top: 0; border-bottom: 3px solid rgba(217,164,65,0.5); }
+      .fx-slice.b { top: 33%; background: rgba(217,164,65,0.10); }
+      .fx-slice.c { top: 66%; border-top: 3px solid rgba(111,179,224,0.4); }
+      .fx-flash { position: absolute; inset: 0; background: #e9e4d8; opacity: 0; }
+
+      /* ===== 逐字点亮字幕 ===== */
+      #captions { position: absolute; bottom: 380px; left: 50px; width: 980px; text-align: center; z-index: 50; height: 100px; pointer-events: none; }
+      .cap-group { position: absolute; left: 0; right: 0; top: 0; font-size: 56px; font-weight: 600; letter-spacing: 0.04em;
+        opacity: 0; visibility: hidden; text-shadow: 0 4px 18px rgba(0,0,0,0.7); white-space: nowrap; }
+      .cap-group .ch { color: #5d6878; }
+      .cap-group .ch.kw-base { font-weight: 700; }
+    </style>
+  </head>
+  <body>
+    <!-- TODO: DUR 改为 音频时长 + 1.3s 左右 -->
+    <div id="root" data-composition-id="main" data-start="0" data-duration="10.0" data-width="1080" data-height="1920">
+      <div class="bg-glow"></div>
+      <div class="bg-glow-2"></div>
+      <div class="bg-grid"></div>
+      <div class="ghost-word" id="ghost-word" data-layout-allow-overflow>关键词</div>
+      <div class="top-bar" id="top-bar"><span>节目名 · 本期主题</span><span class="tag">TAG</span></div>
+      <div class="top-rule" id="top-rule"></div>
+
+      <!-- TODO: data-duration 改为音频实际时长 -->
+      <audio id="el-voice" data-start="0" data-duration="9.0" data-track-index="1" src="assets/voice.wav" data-volume="1"></audio>
+
+      <div class="stage">
+        <!-- 示例场景：复制此块按判定表扩展；data-start = 该段第一句的 start -->
+        <div class="slide clip" id="slide-1" data-start="0" data-duration="10.0" data-track-index="2">
+          <div class="kicker" id="s1-kicker">KICKER · 小标签</div>
+          <h1 class="h-serif" id="s1-title" style="font-size: 96px">大标题<br /><span class="amber">强调词</span></h1>
+        </div>
+      </div>
+
+      <div id="fx">
+        <div class="fx-slice a" id="fx-a"></div>
+        <div class="fx-slice b" id="fx-b"></div>
+        <div class="fx-slice c" id="fx-c"></div>
+        <div class="fx-flash" id="fx-flash"></div>
+      </div>
+
+      <div id="captions"></div>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      var tl = gsap.timeline({ paused: true });
+      var DUR = 10.0; // TODO: 与 root data-duration 一致
+
+      /* ===== 字幕系统（无需改动；KEYWORDS 按主题替换） ===== */
+      var BREAK_RE = /[。！？，、；…：]/;
+      var KEYWORDS = ["关键词A", "关键词B"];
+      var words = window.__TRANSCRIPT || [];
+      var groups = [], cur = [];
+      for (var i = 0; i < words.length; i++) {
+        cur.push(words[i]);
+        if (BREAK_RE.test(words[i].text) || cur.length >= 11) { groups.push(cur); cur = []; }
+      }
+      if (cur.length) groups.push(cur);
+
+      var capRoot = document.getElementById("captions");
+      var groupMeta = [];
+      groups.forEach(function (g, gi) {
+        var el = document.createElement("div");
+        el.className = "cap-group"; el.id = "cg-" + gi;
+        var plain = g.map(function (w) { return w.text.replace(/[。！？，、；…：]/g, ""); }).join("");
+        var kwIdx = {};
+        KEYWORDS.forEach(function (kw) {
+          var from = 0, at;
+          while ((at = plain.indexOf(kw, from)) !== -1) {
+            for (var k = at; k < at + kw.length; k++) kwIdx[k] = true;
+            from = at + kw.length;
+          }
+        });
+        var pos = 0;
+        g.forEach(function (w) {
+          var sp = document.createElement("span");
+          // 字幕零标点：显示文本去掉全部标点
+          var clean = w.text.replace(/[。！？；，、…：]/g, "");
+          var isKw = false;
+          for (var k = pos; k < pos + clean.length; k++) if (kwIdx[k]) isKw = true;
+          pos += clean.length;
+          sp.className = "ch" + (isKw ? " kw-base" : "");
+          sp.textContent = clean;
+          el.appendChild(sp);
+        });
+        capRoot.appendChild(el);
+        var start = g[0].start;
+        var nextStart = gi + 1 < groups.length ? groups[gi + 1][0].start : DUR;
+        var end = Math.min(g[g.length - 1].end + 0.7, nextStart - 0.04, DUR - 0.1);
+        groupMeta.push({ el: el, words: g, start: start, end: Math.max(end, g[g.length - 1].end) });
+      });
+
+      groupMeta.forEach(function (gm) {
+        var t0 = Math.max(0, gm.start - 0.1);
+        tl.fromTo(gm.el, { opacity: 0, y: 16, visibility: "visible" }, { opacity: 1, y: 0, duration: 0.22, ease: "power2.out" }, t0);
+        var spans = gm.el.querySelectorAll(".ch");
+        gm.words.forEach(function (w, wi) {
+          var sp = spans[wi];
+          if (!sp) return;
+          var bright = sp.classList.contains("kw-base") ? "#d9a441" : "#f2ede1";
+          tl.to(sp, { color: bright, duration: 0.16, ease: "none" }, Math.max(w.start, t0));
+        });
+        tl.to(gm.el, { opacity: 0, duration: 0.12, ease: "power2.in" }, gm.end - 0.12);
+        tl.set(gm.el, { opacity: 0, visibility: "hidden" }, gm.end);
+      });
+
+      /* ===== chrome + 背景呼吸（repeat ≈ DUR/3.4） ===== */
+      tl.fromTo("#top-rule", { scaleX: 0 }, { scaleX: 1, duration: 0.8, ease: "expo.out" }, 0.15);
+      tl.fromTo("#top-bar", { opacity: 0, y: -14 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 0.25);
+      tl.fromTo("#ghost-word", { opacity: 0 }, { opacity: 1, duration: 1.2, ease: "sine.out" }, 0.4);
+      tl.to(".bg-glow", { scale: 1.12, duration: 3.4, ease: "sine.inOut", yoyo: true, repeat: 2 }, 0); /* TODO repeat */
+      tl.to("#ghost-word", { x: -60, duration: DUR, ease: "none" }, 0);
+
+      /* ===== glitch 转场：每个场景边界调用一次 ===== */
+      function glitchAt(t) {
+        tl.fromTo("#fx-a", { opacity: 0, x: 0 }, { opacity: 0.95, x: -46, duration: 0.13, ease: "power2.in" }, t - 0.13);
+        tl.to("#fx-a", { opacity: 0, x: 30, duration: 0.18, ease: "power2.out" }, t);
+        tl.fromTo("#fx-b", { opacity: 0, x: 0 }, { opacity: 0.9, x: 52, duration: 0.13, ease: "power2.in" }, t - 0.13);
+        tl.to("#fx-b", { opacity: 0, x: -34, duration: 0.18, ease: "power2.out" }, t);
+        tl.fromTo("#fx-c", { opacity: 0, x: 0 }, { opacity: 0.95, x: -38, duration: 0.13, ease: "power2.in" }, t - 0.13);
+        tl.to("#fx-c", { opacity: 0, x: 24, duration: 0.18, ease: "power2.out" }, t);
+        tl.fromTo("#fx-flash", { opacity: 0 }, { opacity: 0.18, duration: 0.08, ease: "none" }, t - 0.04);
+        tl.to("#fx-flash", { opacity: 0, duration: 0.22, ease: "power2.out" }, t + 0.04);
+      }
+      // 示例：[12.3, 45.6].forEach(glitchAt);
+
+      /* ===== 示例场景入场（按场景扩展） ===== */
+      tl.fromTo("#s1-kicker", { opacity: 0, letterSpacing: "0.6em" }, { opacity: 1, letterSpacing: "0.28em", duration: 0.7, ease: "expo.out" }, 0.3);
+      tl.fromTo("#s1-title", { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 0.75, ease: "power3.out" }, 0.5);
+
+      // sentinel：把时间轴撑到完整时长
+      tl.set({}, {}, DUR);
+
+      /* 字幕自检：渲染前发现常亮组 */
+      groupMeta.forEach(function (gm, gi) {
+        tl.seek(gm.end + 0.01);
+        var cs = window.getComputedStyle(gm.el);
+        if (cs.opacity !== "0" && cs.visibility !== "hidden") {
+          console.warn("[caption-lint] group " + gi + " still visible at t=" + (gm.end + 0.01).toFixed(2));
+        }
+      });
+      tl.seek(0);
+
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

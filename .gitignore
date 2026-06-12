@@ -1,0 +1,8 @@
+episodes/
+tools/.venv/
+tools/voice-samples/
+__pycache__/
+*.pyc
+*.zip
+snapshots/
+.DS_Store
