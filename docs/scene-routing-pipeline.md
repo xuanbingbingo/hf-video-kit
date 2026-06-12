@@ -31,6 +31,7 @@
 | 场景切换 | glitch 切片转场（GSAP 模拟） | 替代 WebGL shader（稳定性优先） | ep02 fx 层 |
 
 模板总库：`~/aiProjects/hyperframes-repo/registry/`（88 blocks + 25 components，官方目录 https://hyperframes.heygen.com/catalog）
+→ 全量路由索引见 **scene-library.md**（29 类扩展场景按文案信号编好，本表查不中去那里查，再不中才手写）
 
 ## 硬规则（违反任何一条不许出片）
 

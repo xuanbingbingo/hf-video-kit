@@ -35,7 +35,7 @@ hf-video-kit/
 │   ├── project-scaffold-real/# ★ 模式 B 骨架（真人全屏→右下圆窗 PIP + 无闪淡入淡出转场）
 │   ├── real/                 # ★ 模式 B 工具链（分块转写/低头检测/剪切/气口压缩/字级转换）
 │   └── .venv/                # SETUP 时创建（numpy soundfile websockets edge-tts；模式 B 另装 mediapipe opencv-python faster-whisper）
-├── docs/                     # 流水线深度文档（scene-routing-pipeline.md 必读）
+├── docs/                     # 流水线深度文档（scene-routing-pipeline.md 必读；scene-library.md = 官方 registry 全量场景索引）
 └── episodes/                 # 每期产物 episode-NN/（script.md + assets/ + hf-project/）
 ```
 
@@ -45,7 +45,9 @@ hf-video-kit/
 ① 数据核实   文案涉及行业数字 → 先联网搜权威来源；查不到就别写，或画面明标 DEMO
 ② 文案定稿   口语化；写完扫多音字（行/重/长/还/得/便/差…），有歧义改写（例:"一行"→"一条"）
 ③ 配音+时间轴 tools/.venv/bin/python tools/gen_voice_timed.py script.md assets/voice.wav assets/transcript_chars.json 沉稳解说
-④ 场景路由   拷贝 tools/project-scaffold/ 为 episodes/episode-NN/hf-project/ → 按句切段 → 逐段查下方判定表加场景（骨架已含字幕系统/转场层/铁律注释，照 TODO 替换即可）
+④ 场景路由   拷贝 tools/project-scaffold/ 为 episodes/episode-NN/hf-project/ → 按句切段 → 逐段三级路由加场景：
+             ❶查下方判定表 → ❷不中查 docs/scene-library.md 场景库索引（官方 registry 全量 29 类扩展场景）→ ❸仍不中才手写
+             （骨架已含字幕系统/转场层/铁律注释，照 TODO 替换即可）
 ⑤ 锚点编排   场景边界 = 句子 start；段内元素卡着关键词说出口的瞬间出现（字级时间戳子串定位）
 ⑥ 渲染自检   hyperframes validate → snapshot 抽帧检查每个场景 → render → speedup.py 出 1.2 倍速版（见「交付设置」）→ open（Win: start）打开给用户
 ```
@@ -71,7 +73,7 @@ hf-video-kit/
              （走①.5的文本来自原稿通常无错字；若直接用 whisper 词流则先找同音错字写 fixes.json）
 ⑤ 资产生成   人声 voice.wav: ffmpeg -vn -af loudnorm=I=-16:TP=-1.5:LRA=11 -ar 48000 -ac 2
              画面 face.mp4:  ffmpeg -an -c:v libx264 -crf 21 -movflags +faststart
-⑥ 场景路由   拷贝 tools/project-scaffold-real/ → 按模式 A 判定表加场景；
+⑥ 场景路由   拷贝 tools/project-scaffold-real/ → 按模式 A 同款三级路由（判定表 → scene-library.md → 手写）加场景；
              T_PIP = 第一个「画面接管」语义的字的 start（prep_transcript.py --find 查时间）；
              PIP 圆窗 object-position Y 必须 mediapipe 实测脸中心（骨架注释里有公式）
 ⑦ 渲染自检   同模式 A：validate → snapshot 逐场景核对 → render → speedup.py 出 1.2 倍速版 → open（Win: start）
@@ -111,9 +113,11 @@ hf-video-kit/
 | 结尾 | 金句 + 金底关注按钮 scale 脉冲 |
 | 场景切换 | 无闪淡入淡出（出 0.35s / 入 0.45s）。⚠️ 禁用 glitch 切片和白闪——模式 A/B 通用，用户验收定论（6-12，曾误以为只限真人版） |
 
-没有匹配模板的段落就手写画面，风格遵循下方视觉规范。
+本表查不中 → 查 **docs/scene-library.md**（官方 registry 全量索引：29 类扩展内容场景 + 转场白/黑名单 +
+取源方式，已按文案信号编好路由）；场景库也不中才手写，风格遵循下方视觉规范。
 本机 episodes/ 若有历史成片，优先参考其 hf-project/index.html 的实现。
-更多模板可参考官方 registry（github.com/heygen-com/hyperframes 的 registry/ 目录，88 blocks+25 components）——只搬结构，配色换成本规范。
+官方 block 改造铁律：只搬结构，配色字体换成本规范；⚠️WebGL 块 snapshot 必查、失败走降级策略。
+本地若有 ~/aiProjects/hyperframes-repo 克隆，每期开工前 git pull 同步官方新增场景。
 
 ## 字幕系统实现要点（composition 内 JS）
 
