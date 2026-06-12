@@ -59,6 +59,8 @@ tools/
 ├── hfvoice.py            # 单句配音 CLI（试音色）
 ├── voices.json           # 17 个注册音色（默认「沉稳解说」）
 ├── tts_speakers.csv      # 剪映全量 163 音色清单（想换音色让 Claude 从这里挑了注册）
+│                         #   163 个音色的试听包（63MB）在 Releases 页下载，解压到 tools/voice-samples/
+│                         #   不下载也行：hfvoice.py 现场合成一句即可试听
 ├── speedup.py            # 成片倍速（渲染后处理，变速不变调）
 ├── project-scaffold/     # 模式 A 工程骨架
 ├── project-scaffold-real/# 模式 B 工程骨架（真人全屏→圆窗 PIP）
