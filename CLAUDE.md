@@ -46,6 +46,8 @@ hf-video-kit/
 ④ 场景路由   拷贝 tools/project-scaffold/ 为 episodes/episode-NN/hf-project/ → 按句切段 → 逐段查下方判定表加场景（骨架已含字幕系统/转场层/铁律注释，照 TODO 替换即可）
 ⑤ 锚点编排   场景边界 = 句子 start；段内元素卡着关键词说出口的瞬间出现（字级时间戳子串定位）
 ⑥ 渲染自检   hyperframes validate → snapshot 抽帧检查每个场景 → render → speedup.py 出 1.2 倍速版（见「交付设置」）→ open 打开给用户
+⑦ 发布物料   按 docs/douyin-publish-template.md 生成 episodes/episode-NN/epNN-发布物料.md
+             （标题三选一/话题/发布前清单/置顶评论/私信话术/黄金1小时SOP/数据节点）+ 封面
 ```
 
 句级/字级锚点提取方法：transcript_chars.json 里每个字有 {text,start,end}，标点附在字上；
@@ -73,6 +75,10 @@ hf-video-kit/
              T_PIP = 第一个「画面接管」语义的字的 start（prep_transcript.py --find 查时间）；
              PIP 圆窗 object-position Y 必须 mediapipe 实测脸中心（骨架注释里有公式）
 ⑦ 渲染自检   同模式 A：validate → snapshot 逐场景核对 → render → speedup.py 出 1.2 倍速版 → open
+⑧ 发布物料   按 docs/douyin-publish-template.md 生成 epNN-发布物料.md；封面用
+             tools/real/gen_covers.py 从成片抽真人帧出 16:9 / 4:3 / 3:4 三比例
+             （人脸自动检测定位；文案传参，"|"分隔浅色|金色）；
+             **口径自洽三处对照必做**：口播/标题/封面（真人版禁用纯"没人拍"表述）
 ```
 
 模式 B 硬规则（每条都是踩过的坑，违反不许出片）：
