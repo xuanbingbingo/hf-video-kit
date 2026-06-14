@@ -12,9 +12,15 @@
 | 用户说的话 / 给的素材 | 模式 |
 |---|---|
 | 「做个视频 / 出片 / 把文案做成视频」，只给文案 | **模式 A：AI 原生**（TTS 配音 + 全屏 hf 场景，走下方 6 步标准流程） |
-| 「用我的声音出片 / 真人版 / 真人原声」，或给了一段真人口播录像 | **模式 B：真人原声**（真人开场全屏 + 右下圆窗 PIP + hf 场景，走「真人原声模式」7 步流程） |
+| 「用我的声音出片 / 真人版 / 真人原声」，或给了一段真人口播录像 | **模式 B：真人原声**（真人原声 + hf 场景，走「真人原声模式」7 步流程；**画面布局二选一见下**） |
 
 同一篇文案可以两版都出（例：ep10-douyin.mp4 是 A，ep10-douyin-own.mp4 是 B）。模式 B 不改动模式 A 的任何工具和流程。
+
+**模式 B 的两种画面布局（layout，⓪~⑤ 步完全相同，仅第 ⑥ 步选不同骨架）**：
+- `layout=pip`（默认）：真人开场全屏 → 缩到右下金边圆窗，hf 场景占满主画面。骨架 `tools/project-scaffold-real/`
+- `layout=overlay`：真人全程全屏铺底，hf 半透明浮卡叠在真人画面上（不缩窗）。骨架 `tools/project-scaffold-real-overlay/`；浮卡分 `.float`（露脸不遮）/ `.full`（满屏盖脸），适合"沉浸口播 + 数据浮层"观感（人全程在、卡从头叠到尾）
+
+用户没指定时默认 **pip**；说「叠加 / overlay / 卡片浮在我身上 / 人全程都在」走 **overlay**。
 
 ## 目录结构
 
@@ -32,10 +38,13 @@ hf-video-kit/
 │   ├── tts_speakers.csv      # 剪映全量 163 音色清单（要加新音色查这里）
 │   ├── voice-samples/        # 163 个音色试听 wav（用户挑音色时 afplay 放给 ta 听）
 │   ├── project-scaffold/     # ★ hf-project 空白脚手架（模式 A：配置三件套+骨架 index.html 含字幕系统/转场层）
-│   ├── project-scaffold-real/# ★ 模式 B 骨架（真人全屏→右下圆窗 PIP + 无闪淡入淡出转场）
+│   ├── project-scaffold-real/# ★ 模式 B 骨架·layout=pip（真人全屏→右下圆窗 PIP + 无闪淡入淡出转场）
+│   ├── project-scaffold-real-overlay/ # ★ 模式 B 骨架·layout=overlay（真人全程铺底 + hf 浮卡叠加；.float 露脸卡 / .full 全屏卡）
 │   ├── real/                 # ★ 模式 B 工具链（分块转写/低头检测/剪切/气口压缩/字级转换）
 │   └── .venv/                # SETUP 时创建（numpy soundfile websockets edge-tts；模式 B 另装 mediapipe opencv-python faster-whisper）
-├── docs/                     # 流水线深度文档（scene-routing-pipeline.md 必读；scene-library.md = 官方 registry 全量场景索引）
+├── docs/                     # 流水线深度文档：scene-routing-pipeline.md 必读；scene-library.md=文案→block 纵向路由；
+│                             #   scene-cheatsheet.md=113 项横向速查（规划前先扫，防偏科）；anti-bias-rules.md=场景多样性硬约束
+│   └── (tools/scene_audit.py)# ★ 渲染前场景多样性校验（扫 data-scene，超阈值报警）
 └── episodes/                 # 每期产物 episode-NN/（script.md + assets/ + hf-project/）
 ```
 
@@ -48,8 +57,11 @@ hf-video-kit/
 ④ 场景路由   拷贝 tools/project-scaffold/ 为 episodes/episode-NN/hf-project/ → 按句切段 → 逐段三级路由加场景：
              ❶查下方判定表 → ❷不中查 docs/scene-library.md 场景库索引（官方 registry 全量 29 类扩展场景）→ ❸仍不中才手写
              （骨架已含字幕系统/转场层/铁律注释，照 TODO 替换即可）
+             ⚠️防偏科：开工前先扫 docs/scene-cheatsheet.md 横向供给表，同一信号别每次同一场景；每个 slide 填 data-scene；
+             至少叠 1 个增强层（grain/vignette/shimmer/morph/parallax，填 data-fx）。约束见 docs/anti-bias-rules.md
+④.5 多样性自检 对照 docs/anti-bias-rules.md 三节清单；写完场景跑 tools/.venv/bin/python tools/scene_audit.py hf-project/index.html，有 🔴 先调整再渲染
 ⑤ 锚点编排   场景边界 = 句子 start；段内元素卡着关键词说出口的瞬间出现（字级时间戳子串定位）
-⑥ 渲染自检   hyperframes validate → snapshot 抽帧检查每个场景 → render → speedup.py 出 1.2 倍速版（见「交付设置」）→ open（Win: start）打开给用户
+⑥ 渲染自检   scene_audit.py 通过 → hyperframes validate → snapshot 抽帧检查每个场景 → render → speedup.py 出 1.2 倍速版（见「交付设置」）→ open（Win: start）打开给用户
 ```
 
 句级/字级锚点提取方法：transcript_chars.json 里每个字有 {text,start,end}，标点附在字上；
@@ -57,8 +69,10 @@ hf-video-kit/
 
 ## 真人原声模式（模式 B，7 步按序执行）
 
-> 用户给一段真人口播录像，声音全程用用户原声；画面 = 真人开场全屏几秒 →
-> 缩到右下金边圆窗 PIP，hf 场景接管。工具全在 `tools/real/`，venv 复用 tools/.venv。
+> 用户给一段真人口播录像，声音全程用用户原声。画面有两种布局（layout，开工前先定）：
+> **pip**（默认）= 真人开场全屏几秒 → 缩到右下金边圆窗，hf 场景接管；
+> **overlay** = 真人全程全屏铺底，hf 半透明浮卡叠在真人上（不缩窗）。
+> ⓪~⑤ 步两种布局完全相同，仅第 ⑥ 步选不同骨架。工具全在 `tools/real/`，venv 复用 tools/.venv。
 
 ```
 ⓪ 文案与录像 从选题开始时：复用模式 A 的①②步出文案（注意模式 B 文案自洽，见硬规则 7）→
@@ -73,10 +87,13 @@ hf-video-kit/
              （走①.5的文本来自原稿通常无错字；若直接用 whisper 词流则先找同音错字写 fixes.json）
 ⑤ 资产生成   人声 voice.wav: ffmpeg -vn -af loudnorm=I=-16:TP=-1.5:LRA=11 -ar 48000 -ac 2
              画面 face.mp4:  ffmpeg -an -c:v libx264 -crf 21 -movflags +faststart
-⑥ 场景路由   拷贝 tools/project-scaffold-real/ → 按模式 A 同款三级路由（判定表 → scene-library.md → 手写）加场景；
-             T_PIP = 第一个「画面接管」语义的字的 start（prep_transcript.py --find 查时间）；
-             PIP 圆窗 object-position Y 必须 mediapipe 实测脸中心（骨架注释里有公式）
-⑦ 渲染自检   同模式 A：validate → snapshot 逐场景核对 → render → speedup.py 出 1.2 倍速版 → open（Win: start）
+⑥ 场景路由   按 layout 拷骨架 → 按模式 A 同款三级路由（判定表 → scene-library.md → 手写）加场景：
+             · layout=pip：拷 tools/project-scaffold-real/；T_PIP = 第一个「画面接管」语义字的 start（prep_transcript.py --find 查）；
+               PIP 圆窗 object-position Y 必须 mediapipe 实测脸中心（骨架注释里有公式）
+             · layout=overlay：拷 tools/project-scaffold-real-overlay/；不缩窗、face 全程铺底（object-position 让脸落上半安全区）；
+               浮卡用 .float（半透明叠真人上、不挡脸）/ .full（不透明全屏盖真人）；T_START = 第一张浮卡进场时刻
+⑦ 渲染自检   同模式 A：scene_audit.py 通过 → validate → snapshot 逐场景核对 → render → speedup.py 出 1.2 倍速版 → open（Win: start）
+             （防偏科约束模式 A/B 通用：浮卡/PIP 主场景同样填 data-scene，见 docs/anti-bias-rules.md）
 ```
 
 模式 B 硬规则（每条都是踩过的坑，违反不许出片）：
@@ -115,6 +132,8 @@ hf-video-kit/
 
 本表查不中 → 查 **docs/scene-library.md**（官方 registry 全量索引：29 类扩展内容场景 + 转场白/黑名单 +
 取源方式，已按文案信号编好路由）；场景库也不中才手写，风格遵循下方视觉规范。
+⚠️ **本判定表是"主力快查"，不是"全部供给"**——只照它出片必然偏科（同信号永远同场景）。规划分镜前**必须**先扫
+**docs/scene-cheatsheet.md**（113 项横向总览），主动用没用过的；多样性硬约束 + data-scene 词表见 **docs/anti-bias-rules.md**。
 本机 episodes/ 若有历史成片，优先参考其 hf-project/index.html 的实现。
 官方 block 改造铁律：只搬结构，配色字体换成本规范；⚠️WebGL 块 snapshot 必查、失败走降级策略。
 本地若有 ~/aiProjects/hyperframes-repo 克隆，每期开工前 git pull 同步官方新增场景。
@@ -145,9 +164,22 @@ hf-video-kit/
 
 1. **必须有配音**——包括 demo 小样，禁止交付无声视频
 2. **音色默认「沉稳解说」**（剪映 SAMI）；⚠️ SAMI 是非官方接口可能失效，失效时换 edge 音色（如 晓晓/云扬）并告知用户
-3. **多音字先扫后配**；**字幕零标点**
+3. **多音字先扫后配**；**英文字母/缩写按下方「字母发音」节处理**；**字幕零标点**
 4. **数据必须真实**：联网核实+画面标 SOURCE；编造的演示数据明标 DEMO；虚构贴文标"示意"
 5. **渲染前抽帧自检**（validate + snapshot 关键帧逐场景看排版和同步），**渲染后必须 open（Win: start）打开**
+6. **场景不许偏科**：每个 slide 填 data-scene、至少叠 1 个增强层、渲染前 `scene_audit.py` 无 🔴（同 kind ≤3 次 / ≥5 种 / fx≥1）。详见 docs/anti-bias-rules.md
+
+## 字母/英文缩写发音（6-14 小号10「AI」踩坑定论）
+
+SAMI 念英文字母缩写（AI / CEO / UI…）常含糊。处理方式 = **谐音映射**，在 `tools/gen_voice_timed.py`
+顶部 `SPEECH_MAP` 里配：合成时替换成拼音谐音，**字幕仍显示原文不受影响**。
+
+- 已固化映射：`SPEECH_MAP = {'AI': '诶艾'}`（A≈诶 ei / I≈艾 ai）。要加新缩写往这个 dict 里加。
+- **映射值必须与原文严格等字符数**（AI 2 字符 → 诶艾 2 字符），否则字级时间轴错位。
+- ⚠️ **验证发音必须在交付速度（1.2 倍速）下做 A/B，不能用裸句原速试听**：
+  原速裸句里原文「AI」念得清，**1.2 倍速下却被压糊**，而诶艾音节长、压速后反而清晰——
+  当初就因为拿原速裸句盲测、误判成「原文最好」，白渲了一轮。
+  做法：`hfvoice` 合两版 → 各自 `ffmpeg -filter:a atempo=1.2` → afplay 对比，再定方案。
 
 ## ⚠️ 最大的坑：配音改一个字 = 全片时间轴偏移
 

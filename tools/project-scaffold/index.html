@@ -6,6 +6,8 @@
   2. 把配音 voice.wav 放进 assets/，字级时间戳写成 transcript.js（window.__TRANSCRIPT = [...]）
   3. 替换 DUR、audio data-duration、示例场景；按 CLAUDE.md 场景判定表逐段添加 slide
   4. 场景显隐用 showSlide(id,t0,t1) 无闪淡入淡出（禁 glitch/白闪）；字幕系统已内置无需改动
+  5. ⚠️防偏科：每个 slide 必须带 data-scene="<kind>"（词表见 docs/anti-bias-rules.md）；叠加的增强层带
+     data-fx="grain|vignette|shimmer|mblur|morph|texmask|parallax …"。渲染前跑 tools/scene_audit.py 校验多样性。
   铁律：有时序元素必须 data-start/data-duration/data-track-index + class="clip"；
        时间轴 paused 并注册 window.__timelines["main"]；禁止 Date.now()/Math.random()
 -->
@@ -72,8 +74,9 @@
       <audio id="el-voice" data-start="0" data-duration="9.0" data-track-index="1" src="assets/voice.wav" data-volume="1"></audio>
 
       <div class="stage">
-        <!-- 示例场景：复制此块按判定表扩展；data-start = 该段第一句的 start -->
-        <div class="slide clip" id="slide-1" data-start="0" data-duration="10.0" data-track-index="2">
+        <!-- 示例场景：复制此块按判定表扩展；data-start = 该段第一句的 start
+             data-scene 必填（场景 kind，防偏科统计用）；增强层叠 data-fx，如 data-fx="shimmer" -->
+        <div class="slide clip" id="slide-1" data-scene="title" data-start="0" data-duration="10.0" data-track-index="2">
           <div class="kicker" id="s1-kicker">KICKER · 小标签</div>
           <h1 class="h-serif" id="s1-title" style="font-size: 96px">大标题<br /><span class="amber">强调词</span></h1>
         </div>

@@ -1,0 +1,226 @@
+<!doctype html>
+<!--
+  hf-video-kit 真人原声模式骨架 · overlay 布局（竖版 1080×1920，模式 B 的 layout=overlay）
+  结构：真人全程全屏铺底（原声）→ hf 浮卡半透明叠在真人画面上（不缩窗）
+  与 project-scaffold-real（layout=pip，真人缩右下圆窗）的唯一区别在图层关系，前 ⓪~⑤ 步流程完全一致。
+  使用方法（给 Claude 的指引）：
+  1. 整个 project-scaffold-real-overlay 目录拷贝为 episodes/episode-NN/hf-project/
+  2. assets/voice.wav = 母带提取人声（loudnorm -16）；assets/face.mp4 = 母带去音轨视频；
+     transcript.js 用 tools/real/prep_transcript.py 从词时间轴生成
+  3. 替换 DUR、T_START（第一张数据浮卡进场时刻；开场前几秒纯真人）、媒体 data-duration、场景
+  4. face 全程铺底不缩窗：调 #face-pos video 的 object-position 让脸落在画面上半安全区（竖版默认 50% 30%），
+     使中下部留给浮卡、不挡脸。无需 mediapipe 测圆窗位置（overlay 不缩窗）。
+  5. 浮卡两种：
+     - .slide.float = 半透明玻璃卡，叠在真人画面上、不挡脸（默认放中下部，给上半部的脸留位）
+     - .slide.full  = 不透明全屏卡，临时盖住真人（用于全屏代码窗/数据面板/地图等需要满屏的场景）
+  6. 场景切换只用 showSlide 淡入淡出（真人版禁用 glitch/白闪，用户已验收的定论）
+  铁律：有时序元素必须 data-start/data-duration/data-track-index + class="clip"；
+       时间轴 paused 并注册 window.__timelines["main"]；禁止 Date.now()/Math.random()；
+       相邻场景 data-duration 减 0.01 防浮点叠加溢出 track 校验
+-->
+<html lang="zh-CN" data-resolution="portrait">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <title>my-video</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="transcript.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { margin: 0; width: 1080px; height: 1920px; overflow: hidden; background: #0f131b; }
+      body { font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "微软雅黑", sans-serif; color: #e9e4d8; }
+      [data-composition-id="main"] { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #12161e; }
+
+      /* ===== 真人视频：全程全屏铺底（overlay 的底层，z-index 最低） ===== */
+      #face-pos { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; z-index: 1; overflow: hidden; }
+      /* 竖版默认脸在上半安全区；按实际录像微调 Y（脸偏上则减小百分比） */
+      #face-pos video { width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; }
+
+      /* ===== 压暗层：顶部+中下部压暗，让叠在真人上的 chrome / 浮卡 / 字幕可读（z 高于真人、低于氛围） ===== */
+      .scrim { position: absolute; inset: 0; z-index: 2; pointer-events: none;
+        background: linear-gradient(180deg, rgba(15,19,27,0.30) 0%, rgba(15,19,27,0.04) 30%, rgba(15,19,27,0.22) 58%, rgba(15,19,27,0.74) 100%); }
+
+      /* ===== 视觉规范氛围（叠在真人上，极轻；overlay 去掉网格/巨型关键词以免挡真人） ===== */
+      .bg-glow { position: absolute; top: -300px; left: -320px; width: 1000px; height: 1000px; border-radius: 50%; z-index: 3; pointer-events: none;
+        background: radial-gradient(circle, rgba(217,164,65,0.14) 0%, rgba(217,164,65,0.04) 42%, transparent 68%); }
+      .bg-glow-2 { position: absolute; bottom: -360px; right: -300px; width: 950px; height: 950px; border-radius: 50%; z-index: 3; pointer-events: none;
+        background: radial-gradient(circle, rgba(90,122,154,0.12) 0%, transparent 62%); }
+
+      /* ===== 顶部信息条（叠在真人上方，开场即在） ===== */
+      .top-bar { position: absolute; top: 150px; left: 60px; right: 60px; z-index: 6; display: flex; justify-content: space-between; align-items: center;
+        font-family: "SF Mono", Menlo, "Cascadia Code", Consolas, monospace; font-size: 22px; letter-spacing: 0.1em; color: #cdd4de;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.6); }
+      .top-bar .tag { color: #d9a441; }
+      .top-rule { position: absolute; top: 196px; left: 60px; right: 60px; height: 2px; z-index: 6;
+        background: linear-gradient(90deg, rgba(217,164,65,0.8), rgba(233,228,216,0.12)); transform-origin: left center; }
+
+      /* ===== 舞台：全屏容器，slide 自己定位（z 高于真人/氛围、低于字幕） ===== */
+      .stage { position: absolute; inset: 0; z-index: 30; }
+      .slide { position: absolute; opacity: 0; visibility: hidden; }
+      /* 半透明浮卡：叠真人上、不挡脸（默认中下部，上半部留给脸）。需要时改 top/bottom 微调避让 */
+      .slide.float { top: 760px; left: 60px; width: 960px; bottom: 420px;
+        display: flex; flex-direction: column; justify-content: center; gap: 32px; }
+      /* 全屏卡：临时盖住真人（满屏代码窗/数据面板/地图等），自带不透明底 */
+      .slide.full { inset: 0; background: #12161e; padding: 250px 64px 420px;
+        display: flex; flex-direction: column; justify-content: center; gap: 36px; }
+      /* .full 内可加 .grid 网格纹理，照模式 A 视觉规范 */
+      .slide.full .grid { position: absolute; inset: 0; pointer-events: none;
+        background-image: linear-gradient(rgba(233,228,216,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(233,228,216,0.045) 1px, transparent 1px);
+        background-size: 90px 90px; }
+
+      /* 常用元件 */
+      .kicker { font-family: "SF Mono", Menlo, "Cascadia Code", Consolas, monospace; font-size: 26px; letter-spacing: 0.28em; color: #d9a441; text-shadow: 0 2px 10px rgba(0,0,0,0.6); }
+      .h-serif { font-family: "Songti SC", "Source Han Serif SC", "思源宋体", "Noto Serif SC", "SimSun", serif; font-weight: 900; line-height: 1.22; margin: 0; letter-spacing: 0.02em; text-shadow: 0 4px 18px rgba(0,0,0,0.6); }
+      .amber { color: #d9a441; }
+      /* 浮卡玻璃质感：叠在真人上比 pip 版更实一点 + 模糊背板，保证可读 */
+      .card { border: 2px solid rgba(233,228,216,0.18); border-radius: 20px; background: rgba(18,22,30,0.62); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: 0 18px 50px rgba(0,0,0,0.45); }
+      .quote-bar { padding: 30px 40px; border-left: 8px solid #d9a441; background: rgba(18,22,30,0.62); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-radius: 8px;
+        font-family: "Songti SC", "Source Han Serif SC", "思源宋体", "Noto Serif SC", "SimSun", serif; font-weight: 900; line-height: 1.45; text-shadow: 0 4px 18px rgba(0,0,0,0.6); }
+
+      /* ===== 逐字点亮字幕（与 pip 版一致） ===== */
+      #captions { position: absolute; bottom: 380px; left: 50px; width: 980px; text-align: center; z-index: 50; height: 100px; pointer-events: none; }
+      .cap-group { position: absolute; left: 0; right: 0; top: 0; font-size: 56px; font-weight: 600; letter-spacing: 0.04em;
+        opacity: 0; visibility: hidden; text-shadow: 0 4px 18px rgba(0,0,0,0.7); white-space: nowrap; }
+      .cap-group .ch { color: #5d6878; }
+      .cap-group .ch.kw-base { font-weight: 700; }
+    </style>
+  </head>
+  <body>
+    <!-- TODO: DUR 改为 音频时长 + 1.3s 左右 -->
+    <div id="root" data-composition-id="main" data-start="0" data-duration="10.0" data-width="1080" data-height="1920">
+      <!-- 真人视频：全程全屏铺底；TODO: data-duration 改为母带时长（voice.wav 与 face.mp4 同源等长） -->
+      <div id="face-pos">
+        <video id="el-face" data-start="0" data-duration="9.0" data-track-index="0" src="assets/face.mp4" muted playsinline></video>
+      </div>
+
+      <div class="scrim"></div>
+      <div class="bg-glow"></div>
+      <div class="bg-glow-2"></div>
+
+      <div class="top-bar" id="top-bar"><span>节目名 · 本期主题</span><span class="tag">TAG</span></div>
+      <div class="top-rule" id="top-rule"></div>
+
+      <!-- TODO: data-duration 改为母带实际时长 -->
+      <audio id="el-voice" data-start="0" data-duration="9.0" data-track-index="1" src="assets/voice.wav" data-volume="1"></audio>
+
+      <div class="stage">
+        <!-- 示例：半透明浮卡，叠在真人上、不挡脸（复制此块按判定表扩展；相邻场景 duration 减 0.01 防浮点溢出）
+             data-scene 必填（场景 kind，防偏科）；增强层叠 data-fx。词表/约束见 docs/anti-bias-rules.md，渲染前跑 tools/scene_audit.py -->
+        <div class="slide float clip" id="slide-1" data-scene="title" data-start="0" data-duration="10.0" data-track-index="2">
+          <div class="kicker" id="s1-kicker">KICKER · 小标签</div>
+          <h1 class="h-serif" id="s1-title" style="font-size: 84px">大标题<br /><span class="amber">强调词</span></h1>
+        </div>
+        <!-- 全屏场景示例（需要满屏时用 .full，会盖住真人）：
+        <div class="slide full clip" id="slide-2" data-scene="code" data-start="..." data-duration="..." data-track-index="2">
+          <div class="grid"></div>
+          ...满屏代码窗/柱状图/地图...
+        </div>
+        -->
+      </div>
+
+      <div id="captions"></div>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      var tl = gsap.timeline({ paused: true });
+      var DUR = 10.0;     // TODO: 与 root data-duration 一致
+      var T_START = 3.0;  // TODO: 第一张数据浮卡进场时刻（开场前纯真人几秒）；prep_transcript.py --find 查关键字 start
+
+      /* ===== 字幕系统（与 pip 版完全一致，无需改动；KEYWORDS 按主题替换） ===== */
+      var BREAK_RE = /[。！？，、；…：]/;
+      var KEYWORDS = ["关键词A", "关键词B"];
+      var words = window.__TRANSCRIPT || [];
+      var groups = [], cur = [];
+      for (var i = 0; i < words.length; i++) {
+        cur.push(words[i]);
+        if (BREAK_RE.test(words[i].text) || cur.length >= 11) { groups.push(cur); cur = []; }
+      }
+      if (cur.length) groups.push(cur);
+
+      var capRoot = document.getElementById("captions");
+      var groupMeta = [];
+      groups.forEach(function (g, gi) {
+        var el = document.createElement("div");
+        el.className = "cap-group"; el.id = "cg-" + gi;
+        var plain = g.map(function (w) { return w.text.replace(/[。！？，、；…：]/g, ""); }).join("");
+        var kwIdx = {};
+        KEYWORDS.forEach(function (kw) {
+          var from = 0, at;
+          while ((at = plain.indexOf(kw, from)) !== -1) {
+            for (var k = at; k < at + kw.length; k++) kwIdx[k] = true;
+            from = at + kw.length;
+          }
+        });
+        var pos = 0;
+        g.forEach(function (w) {
+          var sp = document.createElement("span");
+          // 字幕零标点：显示文本去掉全部标点
+          var clean = w.text.replace(/[。！？；，、…：]/g, "");
+          var isKw = false;
+          for (var k = pos; k < pos + clean.length; k++) if (kwIdx[k]) isKw = true;
+          pos += clean.length;
+          sp.className = "ch" + (isKw ? " kw-base" : "");
+          sp.textContent = clean;
+          el.appendChild(sp);
+        });
+        capRoot.appendChild(el);
+        var start = g[0].start;
+        var nextStart = gi + 1 < groups.length ? groups[gi + 1][0].start : DUR;
+        var end = Math.min(g[g.length - 1].end + 0.7, nextStart - 0.04, DUR - 0.1);
+        groupMeta.push({ el: el, words: g, start: start, end: Math.max(end, g[g.length - 1].end) });
+      });
+
+      groupMeta.forEach(function (gm) {
+        var t0 = Math.max(0, gm.start - 0.1);
+        tl.fromTo(gm.el, { opacity: 0, y: 16, visibility: "visible" }, { opacity: 1, y: 0, duration: 0.22, ease: "power2.out" }, t0);
+        var spans = gm.el.querySelectorAll(".ch");
+        gm.words.forEach(function (w, wi) {
+          var sp = spans[wi];
+          if (!sp) return;
+          var bright = sp.classList.contains("kw-base") ? "#d9a441" : "#f2ede1";
+          tl.to(sp, { color: bright, duration: 0.16, ease: "none" }, Math.max(w.start, t0));
+        });
+        tl.to(gm.el, { opacity: 0, duration: 0.12, ease: "power2.in" }, gm.end - 0.12);
+        tl.set(gm.el, { opacity: 0, visibility: "hidden" }, gm.end);
+      });
+
+      /* ===== overlay：真人全程铺底，不缩窗（无 face 变换动画，这是区别于 pip 版的关键一处） ===== */
+
+      /* ===== chrome 进场（顶部信息条开场即淡入；overlay 不依赖 T_START） ===== */
+      tl.fromTo("#top-rule", { scaleX: 0 }, { scaleX: 1, duration: 0.8, ease: "expo.out" }, 0.3);
+      tl.fromTo("#top-bar", { opacity: 0, y: -14 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 0.4);
+      tl.to(".bg-glow", { scale: 1.12, duration: 3.4, ease: "sine.inOut", yoyo: true, repeat: 2 }, 0); /* TODO repeat ≈ DUR/3.4 */
+
+      /* ===== 场景切换：纯淡入淡出（真人版定论：禁用 glitch/白闪）。float 与 full 通用 ===== */
+      function showSlide(id, t0, t1) {
+        tl.set("#" + id, { visibility: "visible" }, t0);
+        tl.fromTo("#" + id, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" }, t0);
+        if (t1 < DUR - 0.2) {
+          tl.to("#" + id, { opacity: 0, duration: 0.35, ease: "power2.inOut" }, t1 - 0.35);
+          tl.set("#" + id, { visibility: "hidden" }, t1);
+        }
+      }
+
+      /* ===== 示例场景入场（按场景扩展；元素卡关键词说出口的瞬间） ===== */
+      showSlide("slide-1", T_START, DUR);
+      tl.fromTo("#s1-kicker", { opacity: 0, letterSpacing: "0.6em" }, { opacity: 1, letterSpacing: "0.28em", duration: 0.7, ease: "expo.out" }, T_START + 0.15);
+      tl.fromTo("#s1-title", { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 0.75, ease: "power3.out" }, T_START + 0.35);
+
+      // sentinel：把时间轴撑到完整时长
+      tl.set({}, {}, DUR);
+
+      /* 字幕自检：渲染前发现常亮组 */
+      groupMeta.forEach(function (gm, gi) {
+        tl.seek(gm.end + 0.01);
+        var cs = window.getComputedStyle(gm.el);
+        if (cs.opacity !== "0" && cs.visibility !== "hidden") {
+          console.warn("[caption-lint] group " + gi + " still visible at t=" + (gm.end + 0.01).toFixed(2));
+        }
+      });
+      tl.seek(0);
+
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

@@ -84,8 +84,9 @@
       <audio id="el-voice" data-start="0" data-duration="9.0" data-track-index="1" src="assets/voice.wav" data-volume="1"></audio>
 
       <div class="stage">
-        <!-- 示例场景：复制此块按判定表扩展；首个场景 data-start = T_PIP；相邻场景 duration 减 0.01 防浮点溢出 -->
-        <div class="slide clip" id="slide-1" data-start="0" data-duration="10.0" data-track-index="2">
+        <!-- 示例场景：复制此块按判定表扩展；首个场景 data-start = T_PIP；相邻场景 duration 减 0.01 防浮点溢出
+             data-scene 必填（场景 kind，防偏科）；增强层叠 data-fx。词表/约束见 docs/anti-bias-rules.md，渲染前跑 tools/scene_audit.py -->
+        <div class="slide clip" id="slide-1" data-scene="title" data-start="0" data-duration="10.0" data-track-index="2">
           <div class="kicker" id="s1-kicker">KICKER · 小标签</div>
           <h1 class="h-serif" id="s1-title" style="font-size: 96px">大标题<br /><span class="amber">强调词</span></h1>
         </div>

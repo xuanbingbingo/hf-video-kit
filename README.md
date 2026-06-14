@@ -11,7 +11,7 @@
 | 模式 | 你给什么 | 声音 | 画面 |
 |---|---|---|---|
 | **A · AI 原生** | 一篇文案（或一个选题） | TTS 合成（17 个开箱即用，另附剪映全量 163 音色清单可随时加） | 全屏 AI 场景 |
-| **B · 真人原声** | 一段你念稿的录像 | **你自己的声音** | 开场真人全屏 → 缩到右下圆窗，AI 场景接管 |
+| **B · 真人原声** | 一段你念稿的录像 | **你自己的声音** | 两种布局：开场真人全屏→缩右下圆窗（pip，默认）／ 真人全程铺底+数据浮卡叠加（overlay）|
 
 两种模式共用同一套场景引擎和视觉规范，同一篇文案可以各出一版。
 
@@ -81,7 +81,8 @@ tools/
 │                         #   不下载也行：hfvoice.py 现场合成一句即可试听
 ├── speedup.py            # 成片倍速（渲染后处理，变速不变调）
 ├── project-scaffold/     # 模式 A 工程骨架
-├── project-scaffold-real/# 模式 B 工程骨架（真人全屏→圆窗 PIP）
+├── project-scaffold-real/# 模式 B 骨架·pip（真人全屏→圆窗 PIP）
+├── project-scaffold-real-overlay/ # 模式 B 骨架·overlay（真人铺底+浮卡叠加）
 └── real/                 # 模式 B 工具链
     ├── transcribe_chunks.py   # 分块转写（防 whisper 跨 take 去重）
     ├── align_takes.py         # 多 take 对齐剪母带（重念取最后一遍，文本以原稿为准）
