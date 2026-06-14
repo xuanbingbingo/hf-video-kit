@@ -1,0 +1,441 @@
+<!doctype html>
+<!-- 长版·横版 1920x1080（紧凑配音·气口剪掉·全场景）一个人用AI能干多少活 -->
+<html lang="zh-CN" data-resolution="landscape">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>effect-showcase-long-h</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="transcript.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: #0f131b; }
+      body { font-family: "PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif; color: #e9e4d8; }
+      [data-composition-id="main"] { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: #12161e; }
+      .bg-glow { position: absolute; top: -340px; left: -300px; width: 1100px; height: 1100px; border-radius: 50%;
+        background: radial-gradient(circle, rgba(217,164,65,0.16) 0%, rgba(217,164,65,0.05) 42%, transparent 68%); pointer-events: none; }
+      .bg-glow-2 { position: absolute; bottom: -400px; right: -320px; width: 1000px; height: 1000px; border-radius: 50%;
+        background: radial-gradient(circle, rgba(90,122,154,0.14) 0%, transparent 62%); pointer-events: none; }
+      .bg-grid { position: absolute; inset: 0;
+        background-image: linear-gradient(rgba(233,228,216,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(233,228,216,0.045) 1px, transparent 1px);
+        background-size: 96px 96px; pointer-events: none; }
+      .ghost-word { position: absolute; bottom: 30px; right: 40px; font-family: "Songti SC","Source Han Serif SC","思源宋体","Noto Serif SC","SimSun",serif; font-weight: 900;
+        font-size: 130px; letter-spacing: 0.04em; color: rgba(233,228,216,0.04); white-space: nowrap; pointer-events: none; line-height: 1; }
+      .top-bar { position: absolute; top: 48px; left: 110px; right: 110px; display: flex; justify-content: space-between; align-items: center;
+        font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 24px; letter-spacing: 0.1em; color: #8c97a8; }
+      .top-bar .tag { color: #d9a441; }
+      .top-rule { position: absolute; top: 92px; left: 110px; right: 110px; height: 2px;
+        background: linear-gradient(90deg, rgba(217,164,65,0.7), rgba(233,228,216,0.12)); transform-origin: left center; }
+      .stage { position: absolute; top: 130px; left: 110px; width: 1700px; height: 760px; }
+      .slide { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 28px; }
+      .kicker { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 28px; letter-spacing: 0.3em; color: #d9a441; }
+      .h-serif { font-family: "Songti SC","Source Han Serif SC","思源宋体","Noto Serif SC","SimSun",serif; font-weight: 900; line-height: 1.18; margin: 0; letter-spacing: 0.02em; text-align: center; }
+      .amber { color: #d9a441; }
+      .scene-tag { position: absolute; top: 0; left: 0; font-family: "SF Mono",Menlo,monospace; font-size: 22px; letter-spacing: 0.12em; color: #5d6878; }
+      .demo-tag { position: absolute; bottom: 0; right: 0; font-family: "SF Mono",Menlo,monospace; font-size: 20px; color: #5d6878; letter-spacing: 0.1em; }
+      .card { border: 2px solid rgba(233,228,216,0.16); border-radius: 20px; background: rgba(233,228,216,0.045); }
+      .quote-bar { padding: 40px 56px; border-left: 12px solid #d9a441; background: rgba(217,164,65,0.08); max-width: 1300px;
+        font-family: "Songti SC","Source Han Serif SC","思源宋体",serif; font-weight: 900; line-height: 1.35; }
+      /* bars 横向 */
+      .bars-wrap { position: absolute; left: 200px; right: 200px; bottom: 120px; height: 500px; display: flex; align-items: flex-end; gap: 60px; }
+      .bar { flex: 1; background: linear-gradient(180deg, #d9a441, #b9852f); border-radius: 10px 10px 0 0; transform-origin: bottom; transform: scaleY(0); position: relative; }
+      .bar.dim { background: linear-gradient(180deg, #44505f, #333d49); }
+      .bar .val { position: absolute; top: -50px; left: 0; right: 0; text-align: center; font-family: "SF Mono",Menlo,monospace; font-size: 32px; color: #f2ede1; opacity: 0; }
+      .axis { position: absolute; left: 200px; right: 200px; bottom: 118px; height: 2px; background: rgba(233,228,216,0.25); }
+      /* map SVG 面板 */
+      .mapsvg { position: absolute; left: 60px; top: 40px; width: 1580px; height: 660px; border: 1px solid rgba(233,228,216,0.1); border-radius: 18px; background: rgba(90,122,154,0.05); }
+      .cont { fill: rgba(120,150,180,0.13); stroke: rgba(150,180,210,0.25); stroke-width: 1.5; }
+      .cdot { fill: #d9a441; }
+      .clbl { fill: #e9e4d8; font-family: "SF Mono",Menlo,monospace; font-size: 30px; }
+      .cline { fill: none; stroke: #d9a441; stroke-width: 4; stroke-linecap: round; }
+      /* social 横向并排 */
+      .posts { display: flex; gap: 40px; max-width: 1500px; }
+      .post { display: flex; gap: 22px; padding: 30px 36px; align-items: flex-start; opacity: 0; flex: 1; }
+      .post .ava { width: 76px; height: 76px; border-radius: 50%; flex: 0 0 76px; background: linear-gradient(135deg,#d9a441,#5a7a9a); }
+      .post .nm { font-size: 30px; font-weight: 700; color: #f2ede1; margin-bottom: 6px; }
+      .post .tx { font-size: 30px; color: #cdd4dd; line-height: 1.4; }
+      .post .meta { margin-top: 10px; font-size: 23px; color: #8c97a8; }
+      /* compare 左右并排 */
+      .cmp { display: flex; flex-direction: row; gap: 56px; align-items: stretch; }
+      .cmp .row { padding: 48px 56px; border-radius: 18px; opacity: 0; width: 580px; display: flex; flex-direction: column; justify-content: center; }
+      .cmp .old { border: 2px solid rgba(190,90,80,0.5); background: rgba(190,90,80,0.08); }
+      .cmp .neu { border: 2px solid #d9a441; background: rgba(217,164,65,0.08); }
+      .cmp .lab { font-family: "SF Mono",Menlo,monospace; font-size: 28px; letter-spacing: 0.14em; margin-bottom: 18px; }
+      .cmp .old .lab { color: #c87b72; } .cmp .neu .lab { color: #d9a441; }
+      .cmp .old .v { color: #8c97a8; text-decoration: line-through; font-size: 46px; }
+      .cmp .neu .v { color: #f2ede1; font-size: 50px; font-weight: 700; }
+      /* flow 横向 */
+      .flowrow { display: flex; flex-direction: row; align-items: center; gap: 0; }
+      .node { width: 320px; padding: 36px 28px; border-radius: 16px; text-align: center; font-size: 34px; font-weight: 700; opacity: 0; }
+      .node.ai { border: 2px solid #5a8ad9; background: rgba(90,138,217,0.1); color: #cfe0ff; }
+      .node.hu { border: 2px solid #d9a441; background: rgba(217,164,65,0.1); color: #f6e6c4; }
+      .farrow { width: 80px; height: 4px; background: #d9a441; transform-origin: left center; transform: scaleX(0); position: relative; }
+      .farrow::after { content:""; position:absolute; right:-2px; top:-7px; border-left:14px solid #d9a441; border-top:9px solid transparent; border-bottom:9px solid transparent; }
+      /* list */
+      .li { display: flex; gap: 28px; align-items: flex-start; opacity: 0; width: 920px; }
+      .li .num { flex: 0 0 66px; width: 66px; height: 66px; border-radius: 50%; border: 2px solid #d9a441; color: #d9a441;
+        display: flex; align-items: center; justify-content: center; font-family: "SF Mono",Menlo,monospace; font-size: 34px; font-weight: 700; }
+      .li .mn { font-size: 38px; color: #f2ede1; font-weight: 600; } .li .sub2 { font-size: 27px; color: #8c97a8; margin-top: 6px; }
+      /* code */
+      .codewin { border-radius: 16px; overflow: hidden; border: 1px solid rgba(233,228,216,0.14); background: #0d1117; width: 1200px; }
+      .codewin .bar2 { height: 56px; background: #161b22; display: flex; align-items: center; gap: 12px; padding: 0 22px; }
+      .dot { width: 18px; height: 18px; border-radius: 50%; } .dot.r{background:#ff5f56}.dot.y{background:#ffbd2e}.dot.g{background:#27c93f}
+      .codewin pre { padding: 36px 44px; font-family: "SF Mono",Menlo,Consolas,monospace; font-size: 36px; line-height: 1.6; color: #c9d1d9; min-height: 300px; }
+      .cmt { color: #6a9955; } .kw { color: #c792ea; } .fn { color: #82aaff; } .str { color: #ecc48d; } .ok { color: #27c93f; }
+      .money { font-family: "SF Mono",Menlo,monospace; font-weight: 700; font-size: 200px; color: #d9a441; text-align: center; text-shadow: 0 0 40px rgba(217,164,65,0.4); }
+      .money .u { font-size: 96px; }
+      .morph-box { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+      .morph-box .mw { position: absolute; font-family: "Songti SC",serif; font-weight: 900; font-size: 150px; color: #d9a441; white-space: nowrap; }
+      .recap-tiles { display: grid; grid-template-columns: repeat(3,1fr); gap: 24px; width: 1100px; }
+      .rtile { height: 180px; border-radius: 14px; border: 1px solid rgba(233,228,216,0.16); background: rgba(233,228,216,0.05);
+        display: flex; align-items: center; justify-content: center; font-size: 30px; color: #8c97a8; opacity: 0; }
+      .grain { position: absolute; inset: 0; pointer-events: none; opacity: 0; mix-blend-mode: overlay;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/></svg>"); }
+      .shimmer { position: absolute; top: 0; bottom: 0; width: 380px; left: -420px; pointer-events: none;
+        background: linear-gradient(105deg, transparent, rgba(255,255,255,0.18), transparent); transform: skewX(-12deg); }
+      .cta-btn { padding: 32px 80px; border-radius: 60px; background: #d9a441; color: #1a1205; font-size: 48px; font-weight: 800; letter-spacing: 0.08em; }
+      .phone { width: 360px; height: 720px; border: 12px solid #2a2f3a; border-radius: 50px; background: #0d1117; position: relative; overflow: hidden; box-shadow: 0 0 60px rgba(217,164,65,0.18); opacity: 0; }
+      .phone .notch { position: absolute; top: 16px; left: 50%; transform: translateX(-50%); width: 130px; height: 26px; border-radius: 14px; background: #2a2f3a; }
+      .phone .scr { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; padding: 36px; text-align: center; }
+      .glowcard { width: 760px; padding: 64px 50px; border-radius: 24px; border: 2px solid #d9a441; background: rgba(217,164,65,0.1);
+        box-shadow: 0 0 80px rgba(217,164,65,0.35); text-align: center; opacity: 0; }
+      #captions { position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%); width: 1700px; text-align: center; z-index: 50; height: 80px; pointer-events: none; }
+      .cap-group { position: absolute; left: 0; right: 0; top: 0; font-size: 52px; font-weight: 600; letter-spacing: 0.04em; opacity: 0; visibility: hidden; text-shadow: 0 4px 18px rgba(0,0,0,0.7); white-space: nowrap; }
+      .cap-group .ch { color: #5d6878; } .cap-group .ch.kw-base { font-weight: 700; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="164.5" data-width="1920" data-height="1080">
+      <div class="bg-glow"></div><div class="bg-glow-2"></div><div class="bg-grid"></div>
+      <div class="ghost-word" id="ghost-word">场景库</div>
+      <div class="top-bar" id="top-bar"><span>HYPERFRAMES · 一个人 + AI 能干多少活</span><span class="tag">全场景 · 横版</span></div>
+      <div class="top-rule" id="top-rule"></div>
+      <audio id="el-voice" data-start="0" data-duration="163.19" data-track-index="1" src="assets/voice.wav" data-volume="1"></audio>
+
+      <div class="stage">
+        <div class="slide clip" id="s-title" data-scene="title" data-start="0.0" data-duration="6.79" data-track-index="2" style="visibility:hidden">
+          <div class="kicker" id="t-kick">HYPERFRAMES · 场景库</div>
+          <h1 class="h-serif" id="t-title" style="font-size:128px">一个人 + AI 能顶<span class="amber">多少人</span>？</h1>
+        </div>
+
+        <div class="slide clip" id="s-big1" data-scene="bigtext" data-start="6.84" data-duration="7.10" data-track-index="2" style="visibility:hidden">
+          <span class="scene-tag">金句 · 结论</span>
+          <div class="quote-bar" id="big1q" style="font-size:72px">一个团队的活，现在<span class="amber">一个人</span>就能扛。</div>
+        </div>
+
+        <div class="slide clip" id="s-bars1" data-scene="bars" data-start="13.99" data-duration="6.81" data-track-index="2" style="visibility:hidden">
+          <span class="scene-tag">柱状图 · 五环节耗时</span><div class="axis"></div>
+          <div class="bars-wrap" id="bars1">
+            <div class="bar" style="height:50%"><span class="val">脚本</span></div><div class="bar dim" style="height:70%"><span class="val">配音</span></div>
+            <div class="bar" style="height:60%"><span class="val">剪辑</span></div><div class="bar dim" style="height:85%"><span class="val">字幕</span></div>
+            <div class="bar" style="height:45%"><span class="val">发布</span></div>
+          </div><span class="demo-tag">DEMO</span>
+        </div>
+
+        <div class="slide clip" id="s-chart1" data-scene="chart" data-start="20.85" data-duration="6.69" data-track-index="2" style="visibility:hidden">
+          <span class="scene-tag">折线 · 耗时下降</span><div class="axis"></div>
+          <svg style="position:absolute;left:200px;right:200px;bottom:120px;width:1500px;height:500px" viewBox="0 0 1500 500" preserveAspectRatio="none">
+            <polyline id="trend1" points="80,90 420,180 800,320 1180,420 1420,460" fill="none" stroke="#d9a441" stroke-width="6" stroke-linecap="round"/>
+          </svg><span class="demo-tag">DEMO</span>
+        </div>
+
+        <div class="slide clip" id="s-cmp1" data-scene="compare" data-start="27.59" data-duration="6.88" data-track-index="2" style="visibility:hidden">
+          <span class="scene-tag">对比 · 以前 vs 现在</span>
+          <div class="cmp"><div class="row old" id="c1o"><div class="lab">BEFORE</div><div class="v">一条片 = 一整天</div></div>
+          <div class="row neu" id="c1n"><div class="lab">AFTER</div><div class="v">一篇文案 = 几分钟</div></div></div>
+        </div>
+
+        <div class="slide clip" id="s-flow1" data-scene="flow" data-start="34.52" data-duration="6.86" data-track-index="2" style="visibility:hidden">
+          <span class="scene-tag">流程 · 四步</span>
+          <div class="flowrow">
+            <div class="node hu" id="f1n1">① 写稿</div><div class="farrow" id="f1a1"></div>
+            <div class="node ai" id="f1n2">② 配音</div><div class="farrow" id="f1a2"></div>
+            <div class="node ai" id="f1n3">③ 配画面</div><div class="farrow" id="f1a3"></div>
+            <div class="node hu" id="f1n4">④ 渲染</div>
+          </div>
+        </div>
+
+        <div class="slide clip" id="s-code1" data-scene="code" data-start="41.43" data-duration="3.58" data-track-index="2" style="visibility:hidden">
+          <span class="scene-tag">代码窗 · 一行命令</span>
+          <div class="codewin"><div class="bar2"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span></div>
+          <pre><span id="c1l1"><span class="cmt"># 一篇文案变视频</span></span>
+<span id="c1l2"><span class="kw">npx</span> hyperframes <span class="fn">render</span> <span class="str">script.md</span></span>
+<span id="c1l3" style="opacity:0"><span class="ok">✓ 渲染完成</span></span></pre></div>
+        </div>
+
+        <div class="slide clip" id="s-list1" data-scene="list" data-start="45.06" data-duration="4.01" data-track-index="2" style="visibility:hidden">
+          <span class="scene-tag">清单 · 三大类活</span>
+          <div class="li" id="l1a"><div class="num">1</div><div><div class="mn">内容生产</div><div class="sub2">文案 / 配音 / 出片</div></div></div>
+          <div class="li" id="l1b"><div class="num">2</div><div><div class="mn">数据处理</div><div class="sub2">整理 / 分析 / 可视化</div></div></div>
+          <div class="li" id="l1c"><div class="num">3</div><div><div class="mn">客户沟通</div><div class="sub2">答疑 / 跟进 / 转化</div></div></div>
+        </div>
+
+        <div class="slide clip" id="s-social1" data-scene="social" data-start="49.12" data-duration="6.14" data-track-index="2" style="visibility:hidden">
+          <span class="scene-tag">评论卡（示意，非真实账号）</span>
+          <div class="posts">
+            <div class="card post" id="p1a"><div class="ava"></div><div><div class="nm">@质疑派</div><div class="tx">这不就是取代人吗？</div><div class="meta">♡ 2.1k · 回复 480</div></div></div>
+            <div class="card post" id="p1b"><div class="ava" style="background:linear-gradient(135deg,#5a7a9a,#d9a441)"></div><div><div class="nm">@实干派</div><div class="tx">是放大人，会用的更值钱。</div><div class="meta">♡ 5.6k · 回复 720</div></div></div>
+          </div>
+        </div>
+
+        <div class="slide clip" id="s-money1" data-scene="money" data-start="55.31" data-duration="5.47" data-track-index="2" style="visibility:hidden">
+          <span class="scene-tag">金额 · 月省外包费</span>
+          <div class="money" id="m1"><span class="u">¥</span>0</div><span class="demo-tag">DEMO</span>
+        </div>
+
+        <div class="slide clip" id="s-map1" data-scene="map" data-start="60.83" data-duration="5.32" data-track-index="2" style="visibility:hidden">
+          <span class="scene-tag">地图 · 一线到下沉（示意）</span>
+          <svg class="mapsvg" viewBox="0 0 1580 660" preserveAspectRatio="none">
+            <g opacity="0.6">
+              <path class="cont" d="M120,120 L420,90 L560,180 L520,300 L360,360 L180,320 Z"/>
+              <path class="cont" d="M600,140 L1050,100 L1320,180 L1400,340 L1180,470 L820,440 L640,320 Z"/>
+              <path class="cont" d="M780,500 L1080,490 L1180,600 L900,640 L760,580 Z"/>
+            </g>
+            <g id="map1pts">
+              <g class="cpt"><circle class="cdot" cx="980" cy="220" r="13"/><text class="clbl" x="1004" y="230">北京</text></g>
+              <g class="cpt"><circle class="cdot" cx="1060" cy="320" r="13"/><text class="clbl" x="1084" y="330">上海</text></g>
+              <g class="cpt"><circle class="cdot" cx="1140" cy="410" r="13"/><text class="clbl" x="1164" y="420">县城</text></g>
+              <g class="cpt"><circle class="cdot" cx="860" cy="380" r="13"/><text class="clbl" x="884" y="390">乡镇</text></g>
+            </g>
+          </svg><span class="demo-tag">示意</span>
+        </div>
+
+        <div class="slide clip" id="s-dev1" data-scene="device" data-start="66.2" data-duration="5.03" data-track-index="2" style="visibility:hidden">
+          <span class="scene-tag">设备 · 手机框展示</span>
+          <div class="phone" id="ph1"><div class="notch"></div><div class="scr"><div class="kicker">PREVIEW</div><h1 class="h-serif amber" style="font-size:60px">成品</h1><div style="font-size:28px;color:#8c97a8">塞进手机框炫质感</div></div></div>
+        </div>
+
+        <div class="slide clip" id="s-big2" data-scene="bigtext" data-start="71.28" data-duration="5.76" data-track-index="2" style="visibility:hidden">
+          <span class="scene-tag">金句 · 不淘汰人</span>
+          <div class="quote-bar" id="big2q" style="font-size:68px">AI 不淘汰人，淘汰<span class="amber">不肯用它的人</span>。</div>
+        </div>
+
+        <div class="slide clip" id="s-bars2" data-scene="bars" data-start="77.09" data-duration="6.00" data-track-index="2" style="visibility:hidden">
+          <span class="scene-tag">柱状图 · 产出差距</span><div class="axis"></div>
+          <div class="bars-wrap" id="bars2" style="left:500px;right:500px;gap:160px">
+            <div class="bar dim" style="height:26%"><span class="val">不会用</span></div><div class="bar" style="height:92%"><span class="val">会用</span></div>
+          </div><span class="demo-tag">DEMO</span>
+        </div>
+
+        <div class="slide clip" id="s-chart2" data-scene="chart" data-start="83.14" data-duration="5.40" data-track-index="2" style="visibility:hidden">
+          <span class="scene-tag">折线 · 指数拉开</span><div class="axis"></div>
+          <svg style="position:absolute;left:200px;right:200px;bottom:120px;width:1500px;height:500px" viewBox="0 0 1500 500" preserveAspectRatio="none">
+            <polyline id="trend2a" points="80,280 420,260 800,210 1180,120 1420,50" fill="none" stroke="#d9a441" stroke-width="6"/>
+            <polyline id="trend2b" points="80,280 420,300 800,350 1180,410 1420,450" fill="none" stroke="#5a7a9a" stroke-width="5" stroke-dasharray="8 8"/>
+          </svg><span class="demo-tag">DEMO</span>
+        </div>
+
+        <div class="slide clip" id="s-list2" data-scene="list" data-start="88.59" data-duration="5.74" data-track-index="2" style="visibility:hidden">
+          <span class="scene-tag">清单 · 三个错</span>
+          <div class="li" id="l2a"><div class="num">1</div><div><div class="mn">贪多</div><div class="sub2">一上来什么都想做</div></div></div>
+          <div class="li" id="l2b"><div class="num">2</div><div><div class="mn">怕慢</div><div class="sub2">没出效果就放弃</div></div></div>
+          <div class="li" id="l2c"><div class="num">3</div><div><div class="mn">不动手</div><div class="sub2">只收藏不开工</div></div></div>
+        </div>
+
+        <div class="slide clip" id="s-cmp2" data-scene="compare" data-start="94.38" data-duration="5.23" data-track-index="2" style="visibility:hidden">
+          <span class="scene-tag">对比 · 手动 vs 批量</span>
+          <div class="cmp"><div class="row old" id="c2o"><div class="lab">手动</div><div class="v">一帧帧剪</div></div>
+          <div class="row neu" id="c2n"><div class="lab">批量</div><div class="v">一键出十条</div></div></div>
+        </div>
+
+        <div class="slide clip" id="s-code2" data-scene="code" data-start="99.66" data-duration="5.04" data-track-index="2" style="visibility:hidden">
+          <span class="scene-tag">代码窗 · 配置文件</span>
+          <div class="codewin"><div class="bar2"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span></div>
+          <pre><span id="c2l1"><span class="cmt"># config.json 改几行</span></span>
+<span id="c2l2"><span class="str">"voice"</span>: <span class="str">"沉稳解说"</span>,</span>
+<span id="c2l3" style="opacity:0"><span class="str">"speed"</span>: <span class="kw">1.2</span></span></pre></div>
+        </div>
+
+        <div class="slide clip" id="s-money2" data-scene="money" data-start="104.75" data-duration="5.30" data-track-index="2" style="visibility:hidden">
+          <span class="scene-tag">金额 · 三个月收入</span>
+          <div class="money" id="m2"><span class="u">¥</span>0</div><span class="demo-tag">DEMO</span>
+        </div>
+
+        <div class="slide clip" id="s-social2" data-scene="social" data-start="110.1" data-duration="5.05" data-track-index="2" style="visibility:hidden">
+          <span class="scene-tag">评论卡（示意）</span>
+          <div class="posts" style="max-width:1000px"><div class="card post" id="p2a"><div class="ava" style="background:linear-gradient(135deg,#d9a441,#c87b72)"></div><div><div class="nm">@新手村</div><div class="tx">零基础到底能不能学会？</div><div class="meta">♡ 8.3k · 回复 1.5k</div></div></div></div>
+        </div>
+
+        <div class="slide clip" id="s-flow2" data-scene="flow" data-start="115.2" data-duration="6.40" data-track-index="2" style="visibility:hidden">
+          <span class="scene-tag">流程 · 三段路径</span>
+          <div class="flowrow">
+            <div class="node hu" id="f2n1">① 模仿</div><div class="farrow" id="f2a1"></div>
+            <div class="node ai" id="f2n2">② 改造</div><div class="farrow" id="f2a2"></div>
+            <div class="node ai" id="f2n3">③ 自动化</div>
+          </div>
+        </div>
+
+        <div class="slide clip" id="s-map2" data-scene="map" data-start="121.65" data-duration="5.60" data-track-index="2" style="visibility:hidden">
+          <span class="scene-tag">地图 · 机会流向（示意）</span>
+          <svg class="mapsvg" viewBox="0 0 1580 660" preserveAspectRatio="none">
+            <g opacity="0.55">
+              <path class="cont" d="M120,140 L460,110 L600,210 L540,330 L320,380 L160,330 Z"/>
+              <path class="cont" d="M680,160 L1120,120 L1380,210 L1420,380 L1140,480 L820,440 Z"/>
+            </g>
+            <!-- 连线与点同一坐标系，先画线再画点 -->
+            <polyline class="cline" id="map2line" points="320,440 760,260 1240,420" stroke-dasharray="1400" stroke-dashoffset="1400"/>
+            <g class="cpt" id="mp2a"><circle class="cdot" cx="320" cy="440" r="14"/><text class="clbl" x="300" y="500">内容</text></g>
+            <g class="cpt" id="mp2b"><circle class="cdot" cx="760" cy="260" r="14"/><text class="clbl" x="740" y="225">产品</text></g>
+            <g class="cpt" id="mp2c"><circle class="cdot" cx="1240" cy="420" r="14"/><text class="clbl" x="1220" y="480">服务</text></g>
+          </svg><span class="demo-tag">示意</span>
+        </div>
+
+        <div class="slide clip" id="s-dev2" data-scene="device" data-fx="shimmer" data-start="127.3" data-duration="5.26" data-track-index="2" style="visibility:hidden">
+          <span class="scene-tag">设备 · 发光数据卡</span>
+          <div class="glowcard" id="gc2"><div class="kicker" style="margin-bottom:18px">KEY METRIC</div><div class="money" id="gcn" style="font-size:150px"><span class="u">+</span>0<span class="u">%</span></div><div style="font-size:28px;color:#8c97a8;margin-top:16px">挂在屏幕上的发光卡片</div></div>
+          <div class="shimmer" id="sh2"></div>
+        </div>
+
+        <div class="slide clip" id="s-chart3" data-scene="chart" data-start="132.61" data-duration="5.07" data-track-index="2" style="visibility:hidden">
+          <span class="scene-tag">折线 · 渗透率半山腰</span><div class="axis"></div>
+          <svg style="position:absolute;left:200px;right:200px;bottom:120px;width:1500px;height:500px" viewBox="0 0 1500 500" preserveAspectRatio="none">
+            <polyline id="trend3" points="80,460 420,400 800,260 1180,200 1420,180" fill="none" stroke="#d9a441" stroke-width="6" stroke-linecap="round"/>
+            <line x1="80" y1="250" x2="1420" y2="250" stroke="rgba(233,228,216,0.2)" stroke-width="2" stroke-dasharray="10 8"/>
+          </svg><span class="demo-tag">DEMO · 半山腰</span>
+        </div>
+
+        <div class="slide clip" id="s-morph" data-scene="other:morph" data-fx="morph" data-start="137.73" data-duration="4.99" data-track-index="2" style="visibility:hidden">
+          <span class="scene-tag">文字变形（morph）</span>
+          <div class="morph-box"><span class="mw" id="mA">工具会变</span><span class="mw" id="mB" style="opacity:0">能力不变</span></div>
+        </div>
+
+        <div class="slide clip" id="s-big3" data-scene="bigtext" data-start="142.77" data-duration="4.11" data-track-index="2" style="visibility:hidden">
+          <span class="scene-tag">金句 · 做成的能力</span>
+          <div class="quote-bar" id="big3q" style="font-size:68px">把一件事 <span class="amber">从零做成</span> 的能力。</div>
+        </div>
+
+        <div class="slide clip" id="s-list3" data-scene="list" data-start="146.93" data-duration="6.22" data-track-index="2" style="visibility:hidden">
+          <span class="scene-tag">清单 · 三个关键词</span>
+          <div class="li" id="l3a"><div class="num">1</div><div><div class="mn">简单</div><div class="sub2">先跑通最小闭环</div></div></div>
+          <div class="li" id="l3b"><div class="num">2</div><div><div class="mn">免费</div><div class="sub2">开源工具够用</div></div></div>
+          <div class="li" id="l3c"><div class="num">3</div><div><div class="mn">能跑通</div><div class="sub2">出一条算一条</div></div></div>
+        </div>
+
+        <div class="slide clip" id="s-recap" data-scene="other:recap" data-fx="grain shimmer" data-start="153.2" data-duration="5.37" data-track-index="2" style="visibility:hidden">
+          <span class="scene-tag">质感叠加（grain + shimmer）</span>
+          <div class="recap-tiles">
+            <div class="rtile">柱状图</div><div class="rtile">折线</div><div class="rtile">地图</div>
+            <div class="rtile">流程</div><div class="rtile">清单</div><div class="rtile">代码</div>
+            <div class="rtile">金额</div><div class="rtile">评论</div><div class="rtile">设备</div>
+          </div>
+          <div class="grain" id="grain"></div><div class="shimmer" id="shimmerR"></div>
+        </div>
+
+        <div class="slide clip" id="s-cta" data-scene="cta" data-start="158.62" data-duration="5.83" data-track-index="2" style="visibility:hidden">
+          <span class="scene-tag">结尾 CTA</span>
+          <h1 class="h-serif" id="ctaTitle" style="font-size:96px">一个人 也能 <span class="amber">全都干</span></h1>
+          <div class="cta-btn" id="ctaBtn">+ 关注 下期接着拆</div>
+        </div>
+      </div>
+
+      <div id="captions"></div>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      var tl = gsap.timeline({ paused: true });
+      var DUR = 164.5;
+      var BREAK_RE = /[。！？，、；…：]/;
+      var KEYWORDS = ["一个人","差距","免费","关注","能力","取代","放大"];
+      var words = window.__TRANSCRIPT || [];
+      var groups = [], cur = [];
+      for (var i = 0; i < words.length; i++) { cur.push(words[i]); if (BREAK_RE.test(words[i].text) || cur.length >= 11) { groups.push(cur); cur = []; } }
+      if (cur.length) groups.push(cur);
+      var capRoot = document.getElementById("captions");
+      var groupMeta = [];
+      groups.forEach(function (g, gi) {
+        var el = document.createElement("div"); el.className = "cap-group"; el.id = "cg-" + gi;
+        var plain = g.map(function (w) { return w.text.replace(/[。！？，、；…：]/g, ""); }).join("");
+        var kwIdx = {};
+        KEYWORDS.forEach(function (kw) { var from = 0, at; while ((at = plain.indexOf(kw, from)) !== -1) { for (var k = at; k < at + kw.length; k++) kwIdx[k] = true; from = at + kw.length; } });
+        var pos = 0;
+        g.forEach(function (w) {
+          var sp = document.createElement("span"); var clean = w.text.replace(/[。！？；，、…：]/g, "");
+          var isKw = false; for (var k = pos; k < pos + clean.length; k++) if (kwIdx[k]) isKw = true; pos += clean.length;
+          sp.className = "ch" + (isKw ? " kw-base" : ""); sp.textContent = clean; el.appendChild(sp);
+        });
+        capRoot.appendChild(el);
+        var start = g[0].start; var nextStart = gi + 1 < groups.length ? groups[gi + 1][0].start : DUR;
+        var end = Math.min(g[g.length - 1].end + 0.6, nextStart - 0.04, DUR - 0.1);
+        groupMeta.push({ el: el, words: g, start: start, end: Math.max(end, g[g.length - 1].end) });
+      });
+      groupMeta.forEach(function (gm) {
+        var t0 = Math.max(0, gm.start - 0.1);
+        tl.fromTo(gm.el, { opacity: 0, y: 14, visibility: "visible" }, { opacity: 1, y: 0, duration: 0.2, ease: "power2.out" }, t0);
+        var spans = gm.el.querySelectorAll(".ch");
+        gm.words.forEach(function (w, wi) { var sp = spans[wi]; if (!sp) return; var bright = sp.classList.contains("kw-base") ? "#d9a441" : "#f2ede1"; tl.to(sp, { color: bright, duration: 0.14, ease: "none" }, Math.max(w.start, t0)); });
+        tl.to(gm.el, { opacity: 0, duration: 0.1, ease: "power2.in" }, gm.end - 0.1);
+        tl.set(gm.el, { opacity: 0, visibility: "hidden" }, gm.end);
+      });
+
+      tl.fromTo("#top-rule", { scaleX: 0 }, { scaleX: 1, duration: 0.7, ease: "expo.out" }, 0.15);
+      tl.fromTo("#top-bar", { opacity: 0, y: -12 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 0.25);
+      tl.fromTo("#ghost-word", { opacity: 0 }, { opacity: 1, duration: 1.0, ease: "sine.out" }, 0.4);
+      tl.to(".bg-glow", { scale: 1.12, duration: 3.4, ease: "sine.inOut", yoyo: true, repeat: 46 }, 0);
+
+      function showSlide(id, t0, t1) {
+        tl.set("#" + id, { visibility: "visible" }, t0);
+        tl.fromTo("#" + id, { opacity: 0 }, { opacity: 1, duration: 0.4, ease: "sine.out" }, t0);
+        if (t1 < DUR - 0.2) { tl.to("#" + id, { opacity: 0, duration: 0.3, ease: "sine.in" }, t1 - 0.3); tl.set("#" + id, { visibility: "hidden" }, t1); }
+      }
+      var SEQ = [
+        ["s-title",0],["s-big1",6.84],["s-bars1",13.99],["s-chart1",20.85],["s-cmp1",27.59],
+        ["s-flow1",34.52],["s-code1",41.43],["s-list1",45.06],["s-social1",49.12],["s-money1",55.31],
+        ["s-map1",60.83],["s-dev1",66.2],["s-big2",71.28],["s-bars2",77.09],["s-chart2",83.14],
+        ["s-list2",88.59],["s-cmp2",94.38],["s-code2",99.66],["s-money2",104.75],["s-social2",110.1],
+        ["s-flow2",115.2],["s-map2",121.65],["s-dev2",127.3],["s-chart3",132.61],["s-morph",137.73],
+        ["s-big3",142.77],["s-list3",146.93],["s-recap",153.2],["s-cta",158.62]
+      ];
+      for (var si = 0; si < SEQ.length; si++) { showSlide(SEQ[si][0], SEQ[si][1], si + 1 < SEQ.length ? SEQ[si+1][1] : DUR); }
+      var S = {}; SEQ.forEach(function(x){ S[x[0]] = x[1]; });
+      function at(id){ return S[id]; }
+
+      tl.fromTo("#t-kick", { opacity: 0, letterSpacing: "0.6em" }, { opacity: 1, letterSpacing: "0.3em", duration: 0.6, ease: "expo.out" }, 0.3);
+      tl.fromTo("#t-title", { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.7, ease: "power3.out" }, 0.5);
+      tl.fromTo("#big1q", { opacity: 0, x: -24 }, { opacity: 1, x: 0, duration: 0.5 }, at("s-big1")+0.25);
+      tl.fromTo("#big2q", { opacity: 0, x: -24 }, { opacity: 1, x: 0, duration: 0.5 }, at("s-big2")+0.25);
+      tl.fromTo("#big3q", { opacity: 0, x: -24 }, { opacity: 1, x: 0, duration: 0.5 }, at("s-big3")+0.25);
+      gsap.utils.toArray("#bars1 .bar").forEach(function(b,i){ tl.fromTo(b,{scaleY:0},{scaleY:1,duration:0.45,ease:"back.out(1.5)"},at("s-bars1")+0.25+i*0.13); tl.to(b.querySelector(".val"),{opacity:1,duration:0.25},at("s-bars1")+0.4+i*0.13); });
+      gsap.utils.toArray("#bars2 .bar").forEach(function(b,i){ tl.fromTo(b,{scaleY:0},{scaleY:1,duration:0.5,ease:"back.out(1.6)"},at("s-bars2")+0.3+i*0.3); tl.to(b.querySelector(".val"),{opacity:1,duration:0.25},at("s-bars2")+0.5+i*0.3); });
+      tl.fromTo("#trend1",{strokeDasharray:1600,strokeDashoffset:1600},{strokeDashoffset:0,duration:1.1,ease:"power2.inOut"},at("s-chart1")+0.5);
+      tl.fromTo("#trend2a",{strokeDasharray:1600,strokeDashoffset:1600},{strokeDashoffset:0,duration:1.0},at("s-chart2")+0.5);
+      tl.fromTo("#trend2b",{strokeDasharray:1600,strokeDashoffset:1600},{strokeDashoffset:0,duration:1.0},at("s-chart2")+0.7);
+      tl.fromTo("#trend3",{strokeDasharray:1600,strokeDashoffset:1600},{strokeDashoffset:0,duration:1.1,ease:"power2.inOut"},at("s-chart3")+0.5);
+      tl.fromTo("#c1o",{opacity:0,x:-30},{opacity:1,x:0,duration:0.45},at("s-cmp1")+0.3); tl.fromTo("#c1n",{opacity:0,x:30},{opacity:1,x:0,duration:0.45},at("s-cmp1")+0.9);
+      tl.fromTo("#c2o",{opacity:0,x:-30},{opacity:1,x:0,duration:0.45},at("s-cmp2")+0.3); tl.fromTo("#c2n",{opacity:0,x:30},{opacity:1,x:0,duration:0.45},at("s-cmp2")+0.9);
+      ["#f1n1","#f1n2","#f1n3","#f1n4"].forEach(function(n,i){ tl.fromTo(n,{opacity:0,y:20},{opacity:1,y:0,duration:0.35},at("s-flow1")+0.3+i*0.5); });
+      ["#f1a1","#f1a2","#f1a3"].forEach(function(a,i){ tl.fromTo(a,{scaleX:0},{scaleX:1,duration:0.3},at("s-flow1")+0.6+i*0.5); });
+      ["#f2n1","#f2n2","#f2n3"].forEach(function(n,i){ tl.fromTo(n,{opacity:0,y:20},{opacity:1,y:0,duration:0.35},at("s-flow2")+0.3+i*0.5); });
+      ["#f2a1","#f2a2"].forEach(function(a,i){ tl.fromTo(a,{scaleX:0},{scaleX:1,duration:0.3},at("s-flow2")+0.6+i*0.5); });
+      tl.fromTo("#c1l1",{opacity:0},{opacity:1,duration:0.3},at("s-code1")+0.3); tl.fromTo("#c1l2",{opacity:0},{opacity:1,duration:0.3},at("s-code1")+0.9); tl.fromTo("#c1l3",{opacity:0,y:8},{opacity:1,y:0,duration:0.3},at("s-code1")+1.7);
+      tl.fromTo("#c2l1",{opacity:0},{opacity:1,duration:0.3},at("s-code2")+0.3); tl.fromTo("#c2l2",{opacity:0},{opacity:1,duration:0.3},at("s-code2")+0.9); tl.fromTo("#c2l3",{opacity:0,y:8},{opacity:1,y:0,duration:0.3},at("s-code2")+1.7);
+      ["#l1a","#l1b","#l1c"].forEach(function(n,i){ tl.fromTo(n,{opacity:0,x:-30},{opacity:1,x:0,duration:0.4},at("s-list1")+0.3+i*0.45); });
+      ["#l2a","#l2b","#l2c"].forEach(function(n,i){ tl.fromTo(n,{opacity:0,x:-30},{opacity:1,x:0,duration:0.4},at("s-list2")+0.3+i*0.45); });
+      ["#l3a","#l3b","#l3c"].forEach(function(n,i){ tl.fromTo(n,{opacity:0,x:-30},{opacity:1,x:0,duration:0.4},at("s-list3")+0.3+i*0.45); });
+      tl.fromTo("#p1a",{opacity:0,x:-30},{opacity:1,x:0,duration:0.45},at("s-social1")+0.3); tl.fromTo("#p1b",{opacity:0,x:30},{opacity:1,x:0,duration:0.45},at("s-social1")+0.9);
+      tl.fromTo("#p2a",{opacity:0,y:24},{opacity:1,y:0,duration:0.45},at("s-social2")+0.3);
+      var mo1={v:0}; tl.to(mo1,{v:8600,duration:1.6,ease:"power1.out",onUpdate:function(){document.getElementById("m1").innerHTML='<span class="u">¥</span>'+Math.round(mo1.v).toLocaleString();}},at("s-money1")+0.3); tl.fromTo("#m1",{scale:0.9},{scale:1,duration:0.35,ease:"back.out(2)"},at("s-money1")+0.3);
+      var mo2={v:0}; tl.to(mo2,{v:32000,duration:1.8,ease:"power1.out",onUpdate:function(){document.getElementById("m2").innerHTML='<span class="u">¥</span>'+Math.round(mo2.v).toLocaleString();}},at("s-money2")+0.3); tl.fromTo("#m2",{scale:0.9},{scale:1,duration:0.35,ease:"back.out(2)"},at("s-money2")+0.3);
+      gsap.utils.toArray("#map1pts .cpt").forEach(function(c,i){ tl.fromTo(c,{opacity:0},{opacity:1,duration:0.35,ease:"power2.out"},at("s-map1")+0.4+i*0.45); var dot=c.querySelector(".cdot"); tl.fromTo(dot,{attr:{r:6}},{attr:{r:13},duration:0.4,ease:"back.out(2)"},at("s-map1")+0.4+i*0.45); });
+      tl.fromTo("#map2line",{strokeDashoffset:1400},{strokeDashoffset:0,duration:1.3,ease:"power2.inOut"},at("s-map2")+0.6);
+      ["#mp2a","#mp2b","#mp2c"].forEach(function(id,i){ tl.fromTo(id,{opacity:0},{opacity:1,duration:0.35},at("s-map2")+0.35+i*0.4); });
+      tl.fromTo("#ph1",{opacity:0,y:40,scale:0.92},{opacity:1,y:0,scale:1,duration:0.6,ease:"power3.out"},at("s-dev1")+0.3);
+      tl.fromTo("#gc2",{opacity:0,scale:0.88},{opacity:1,scale:1,duration:0.5,ease:"back.out(1.6)"},at("s-dev2")+0.3);
+      var gv={v:0}; tl.to(gv,{v:240,duration:1.6,ease:"power1.out",onUpdate:function(){document.getElementById("gcn").innerHTML='<span class="u">+</span>'+Math.round(gv.v)+'<span class="u">%</span>';}},at("s-dev2")+0.5);
+      tl.fromTo("#sh2",{x:0},{x:1500,duration:1.3,ease:"power2.inOut"},at("s-dev2")+0.6);
+      tl.fromTo("#mA",{opacity:0,filter:"blur(18px)",scale:0.8},{opacity:1,filter:"blur(0px)",scale:1,duration:0.5},at("s-morph")+0.25);
+      tl.to("#mA",{opacity:0,filter:"blur(24px)",scale:1.3,duration:0.6,ease:"power2.in"},at("s-morph")+1.3);
+      tl.fromTo("#mB",{opacity:0,filter:"blur(24px)",scale:0.7},{opacity:1,filter:"blur(0px)",scale:1,duration:0.6,ease:"power2.out"},at("s-morph")+1.5);
+      gsap.utils.toArray("#s-recap .rtile").forEach(function(t,i){ tl.fromTo(t,{opacity:0,scale:0.85},{opacity:1,scale:1,duration:0.28},at("s-recap")+0.25+i*0.09); });
+      tl.fromTo("#grain",{opacity:0},{opacity:0.5,duration:0.4},at("s-recap")+0.5);
+      tl.to("#grain",{opacity:0.32,duration:0.16,repeat:10,yoyo:true},at("s-recap")+0.9);
+      tl.fromTo("#shimmerR",{x:0},{x:1820,duration:1.3,ease:"power2.inOut"},at("s-recap")+0.7);
+      tl.fromTo("#ctaTitle",{opacity:0,y:26},{opacity:1,y:0,duration:0.5,ease:"power3.out"},at("s-cta")+0.3);
+      tl.fromTo("#ctaBtn",{opacity:0,scale:0.8},{opacity:1,scale:1,duration:0.45,ease:"back.out(2)"},at("s-cta")+0.8);
+      tl.to("#ctaBtn",{scale:1.08,duration:0.55,ease:"sine.inOut",yoyo:true,repeat:3},at("s-cta")+1.3);
+
+      tl.set({}, {}, DUR);
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

@@ -7,4 +7,8 @@ __pycache__/
 snapshots/
 .DS_Store
 
+# 示例工程的大文件（音频/成片不入库，README 说明生成方法）
+examples/**/assets/*.wav
+examples/**/*.mp4
+
 private/
