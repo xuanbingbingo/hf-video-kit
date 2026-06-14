@@ -62,8 +62,20 @@ if buf:
     phrases.append((buf, '。'))
 
 
+# 英文缩写/字母 TTS 念不清的读音映射：合成时替换为拼音读音，字幕仍用原文。
+# 必须严格等字符数，否则字级时间轴错位（AI→诶艾 都是 2 字符，A≈诶 ei / I≈艾 ai）。
+SPEECH_MAP = {'AI': '诶艾'}  # 仅AI需谐音(6-14定论)；PPT经实听SAMI自然念法已清晰,不映射(6-14验证)
+
+
+def to_speech(text):
+    for k, v in SPEECH_MAP.items():
+        text = text.replace(k, v)
+    return text
+
+
 def synth_phrase(body, tmpdir, idx):
-    """合成一句，返回 float32 samples + sr"""
+    """合成一句，返回 float32 samples + sr（合成文本走 to_speech 读音映射，不影响字幕）"""
+    body = to_speech(body)
     if ENGINE == 'kokoro':
         k = tts_engine._get_kokoro()
         samples, sr = k.create(body, voice=VOICE_ID, speed=1.0, lang=VC.get('lang', 'cmn'))
