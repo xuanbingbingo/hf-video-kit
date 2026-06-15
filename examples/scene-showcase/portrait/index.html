@@ -74,8 +74,8 @@
       .dot { width: 18px; height: 18px; border-radius: 50%; } .dot.r{background:#ff5f56}.dot.y{background:#ffbd2e}.dot.g{background:#27c93f}
       .codewin pre { padding: 32px 34px; font-family: "SF Mono",Menlo,Consolas,monospace; font-size: 32px; line-height: 1.6; color: #c9d1d9; min-height: 340px; }
       .cmt { color: #6a9955; } .kw { color: #c792ea; } .fn { color: #82aaff; } .str { color: #ecc48d; } .ok { color: #27c93f; }
-      .money { font-family: "SF Mono",Menlo,monospace; font-weight: 700; font-size: 190px; color: #d9a441; text-align: center; text-shadow: 0 0 40px rgba(217,164,65,0.4); }
-      .money .u { font-size: 90px; }
+      .money { font-family: "SF Mono",Menlo,monospace; font-weight: 700; font-size: 150px; color: #d9a441; text-align: center; text-shadow: 0 0 40px rgba(217,164,65,0.4); white-space: nowrap; max-width: 944px; }
+      .money .u { font-size: 0.5em; }
       .morph-box { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
       .morph-box .mw { position: absolute; font-family: "Songti SC",serif; font-weight: 900; font-size: 140px; color: #d9a441; white-space: nowrap; }
       .recap-tiles { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; }
@@ -387,10 +387,27 @@
       tl.fromTo("#p1a",{opacity:0,x:-40},{opacity:1,x:0,duration:0.5},at("s-social1")+0.4); tl.fromTo("#p1b",{opacity:0,x:40},{opacity:1,x:0,duration:0.5},at("s-social1")+1.4);
       tl.fromTo("#p2a",{opacity:0,y:30},{opacity:1,y:0,duration:0.5},at("s-social2")+0.4);
       // money x2 + glowcard
-      var mo1={v:0}; tl.to(mo1,{v:8600,duration:2.2,ease:"power1.out",onUpdate:function(){document.getElementById("m1").innerHTML='<span class="u">¥</span>'+Math.round(mo1.v).toLocaleString();}},at("s-money1")+0.4);
-      tl.fromTo("#m1",{scale:0.9},{scale:1,duration:0.4,ease:"back.out(2)"},at("s-money1")+0.4);
-      var mo2={v:0}; tl.to(mo2,{v:32000,duration:2.4,ease:"power1.out",onUpdate:function(){document.getElementById("m2").innerHTML='<span class="u">¥</span>'+Math.round(mo2.v).toLocaleString();}},at("s-money2")+0.4);
-      tl.fromTo("#m2",{scale:0.9},{scale:1,duration:0.4,ease:"back.out(2)"},at("s-money2")+0.4);
+      // money 增强：弹性滚入 + 弹跳overshoot + 辉光脉冲 + ¥爆散 + 字号自适应防溢出
+      function moneyBurst(sid,t0,dist){
+        var s=document.getElementById(sid);
+        for(var i=0;i<6;i++){
+          var y=document.createElement("span"); y.textContent="¥";
+          y.style.cssText="position:absolute;left:50%;top:42%;color:#d9a441;font-size:66px;font-weight:700;opacity:0;text-shadow:0 0 26px rgba(217,164,65,0.9);pointer-events:none;";
+          s.appendChild(y);
+          var a=i*60*Math.PI/180;
+          tl.fromTo(y,{opacity:0,x:0,y:0,scale:0.4},{opacity:1,x:Math.cos(a)*dist,y:Math.sin(a)*dist-30,scale:1.1,rotation:(i%2?28:-28),duration:0.62,ease:"power2.out"},t0);
+          tl.to(y,{opacity:0,y:Math.sin(a)*dist+70,duration:0.5,ease:"power1.in"},t0+0.55);
+        }
+      }
+      function moneyAnim(obj,target,mid,t0){
+        var _el=document.getElementById(mid);_el.style.fontSize="150px";_el.innerHTML='<span class="u">¥</span>'+target.toLocaleString();var _fs=150;while(_el.scrollWidth>920&&_fs>70){_fs-=6;_el.style.fontSize=_fs+"px";}_el.innerHTML='<span class="u">¥</span>0';
+        tl.to(obj,{v:target,duration:1.6,ease:"power2.out",onUpdate:function(){document.getElementById(mid).innerHTML='<span class="u">¥</span>'+Math.round(obj.v).toLocaleString();}},t0);
+        tl.fromTo("#"+mid,{scale:0.5,opacity:0},{scale:1,opacity:1,duration:0.5,ease:"back.out(2.2)"},t0);
+        tl.to("#"+mid,{scale:1.16,duration:0.16,ease:"power2.out"},t0+1.55).to("#"+mid,{scale:1,duration:0.45,ease:"elastic.out(1,0.4)"},t0+1.71);
+        tl.fromTo("#"+mid,{textShadow:"0 0 14px rgba(217,164,65,0.35)"},{textShadow:"0 0 60px rgba(217,164,65,0.95)",duration:0.4,yoyo:true,repeat:1},t0+1.55);
+      }
+      var mo1={v:0}; moneyAnim(mo1,8600,"m1",at("s-money1")+0.4); moneyBurst("s-money1",at("s-money1")+1.6,250);
+      var mo2={v:0}; moneyAnim(mo2,32000,"m2",at("s-money2")+0.4); moneyBurst("s-money2",at("s-money2")+1.6,250);
       // map x2
       // ===== 现成中国地图 GeoJSON + fitExtent 大陆主体(竖版,同横版逻辑) =====
       var CHINA = window.__CHINA;
@@ -427,9 +444,9 @@
       var gv={v:0}; tl.to(gv,{v:240,duration:2.0,ease:"power1.out",onUpdate:function(){document.getElementById("gcn").innerHTML='<span class="u">+</span>'+Math.round(gv.v)+'<span class="u">%</span>';}},at("s-dev2")+0.6);
       tl.fromTo("#sh2",{x:0},{x:1300,duration:1.4,ease:"power2.inOut"},at("s-dev2")+0.8);
       // morph
-      tl.fromTo("#mA",{opacity:0,filter:"blur(20px)",scale:0.8},{opacity:1,filter:"blur(0px)",scale:1,duration:0.6},at("s-morph")+0.3);
-      tl.to("#mA",{opacity:0,filter:"blur(26px)",scale:1.3,duration:0.7,ease:"power2.in"},at("s-morph")+1.6);
-      tl.fromTo("#mB",{opacity:0,filter:"blur(26px)",scale:0.7},{opacity:1,filter:"blur(0px)",scale:1,duration:0.7,ease:"power2.out"},at("s-morph")+1.8);
+      tl.fromTo("#mA",{opacity:0,filter:"blur(20px)",scale:0.85},{opacity:1,filter:"blur(0px)",scale:1,duration:0.6,ease:"power2.out"},at("s-morph")+0.3);
+      tl.to("#mA",{opacity:0,filter:"blur(24px)",scale:0.72,duration:0.55,ease:"power2.in"},at("s-morph")+1.8);
+      tl.fromTo("#mB",{opacity:0,filter:"blur(24px)",scale:0.72},{opacity:1,filter:"blur(0px)",scale:1,duration:0.65,ease:"back.out(1.5)"},at("s-morph")+2.5);
       // recap grain+shimmer
       gsap.utils.toArray("#s-recap .rtile").forEach(function(t,i){ tl.fromTo(t,{opacity:0,scale:0.85},{opacity:1,scale:1,duration:0.3},at("s-recap")+0.3+i*0.1); });
       tl.fromTo("#grain",{opacity:0},{opacity:0.5,duration:0.5},at("s-recap")+0.6);

@@ -395,8 +395,26 @@
       ["#l3a","#l3b","#l3c"].forEach(function(n,i){ tl.fromTo(n,{opacity:0,x:-30},{opacity:1,x:0,duration:0.4},at("s-list3")+0.3+i*0.45); });
       tl.fromTo("#p1a",{opacity:0,x:-30},{opacity:1,x:0,duration:0.45},at("s-social1")+0.3); tl.fromTo("#p1b",{opacity:0,x:30},{opacity:1,x:0,duration:0.45},at("s-social1")+0.9);
       tl.fromTo("#p2a",{opacity:0,y:24},{opacity:1,y:0,duration:0.45},at("s-social2")+0.3);
-      var mo1={v:0}; tl.to(mo1,{v:8600,duration:1.6,ease:"power1.out",onUpdate:function(){document.getElementById("m1").innerHTML='<span class="u">¥</span>'+Math.round(mo1.v).toLocaleString();}},at("s-money1")+0.3); tl.fromTo("#m1",{scale:0.9},{scale:1,duration:0.35,ease:"back.out(2)"},at("s-money1")+0.3);
-      var mo2={v:0}; tl.to(mo2,{v:32000,duration:1.8,ease:"power1.out",onUpdate:function(){document.getElementById("m2").innerHTML='<span class="u">¥</span>'+Math.round(mo2.v).toLocaleString();}},at("s-money2")+0.3); tl.fromTo("#m2",{scale:0.9},{scale:1,duration:0.35,ease:"back.out(2)"},at("s-money2")+0.3);
+      // money 增强：弹性滚入 + 弹跳overshoot + 辉光脉冲 + ¥爆散
+      function moneyBurst(sid,t0,dist){
+        var s=document.getElementById(sid);
+        for(var i=0;i<6;i++){
+          var y=document.createElement("span"); y.textContent="¥";
+          y.style.cssText="position:absolute;left:50%;top:44%;color:#d9a441;font-size:58px;font-weight:700;opacity:0;text-shadow:0 0 24px rgba(217,164,65,0.9);pointer-events:none;";
+          s.appendChild(y);
+          var a=i*60*Math.PI/180;
+          tl.fromTo(y,{opacity:0,x:0,y:0,scale:0.4},{opacity:1,x:Math.cos(a)*dist,y:Math.sin(a)*dist-30,scale:1.1,rotation:(i%2?28:-28),duration:0.62,ease:"power2.out"},t0);
+          tl.to(y,{opacity:0,y:Math.sin(a)*dist+60,duration:0.5,ease:"power1.in"},t0+0.55);
+        }
+      }
+      function moneyAnim(obj,target,mid,t0){
+        tl.to(obj,{v:target,duration:1.5,ease:"power2.out",onUpdate:function(){document.getElementById(mid).innerHTML='<span class="u">¥</span>'+Math.round(obj.v).toLocaleString();}},t0);
+        tl.fromTo("#"+mid,{scale:0.5,opacity:0},{scale:1,opacity:1,duration:0.5,ease:"back.out(2.2)"},t0);
+        tl.to("#"+mid,{scale:1.16,duration:0.16,ease:"power2.out"},t0+1.45).to("#"+mid,{scale:1,duration:0.45,ease:"elastic.out(1,0.4)"},t0+1.61);
+        tl.fromTo("#"+mid,{textShadow:"0 0 12px rgba(217,164,65,0.35)"},{textShadow:"0 0 55px rgba(217,164,65,0.95)",duration:0.4,yoyo:true,repeat:1},t0+1.45);
+      }
+      var mo1={v:0}; moneyAnim(mo1,8600,"m1",at("s-money1")+0.3); moneyBurst("s-money1",at("s-money1")+1.5,270);
+      var mo2={v:0}; moneyAnim(mo2,32000,"m2",at("s-money2")+0.3); moneyBurst("s-money2",at("s-money2")+1.5,270);
       // ===== 现成中国地图 GeoJSON（阿里 DataV，含台湾南海）+ fitSize 自动居中 =====
       var CHINA = window.__CHINA;
       // 用 MultiPoint 四角点(无多边形缠绕坑) fit 到大陆主体范围(纬度18-53.6)，让大陆填满、城市分散
@@ -435,9 +453,9 @@
       tl.fromTo("#gc2",{opacity:0,scale:0.88},{opacity:1,scale:1,duration:0.5,ease:"back.out(1.6)"},at("s-dev2")+0.3);
       var gv={v:0}; tl.to(gv,{v:240,duration:1.6,ease:"power1.out",onUpdate:function(){document.getElementById("gcn").innerHTML='<span class="u">+</span>'+Math.round(gv.v)+'<span class="u">%</span>';}},at("s-dev2")+0.5);
       tl.fromTo("#sh2",{x:0},{x:1500,duration:1.3,ease:"power2.inOut"},at("s-dev2")+0.6);
-      tl.fromTo("#mA",{opacity:0,filter:"blur(18px)",scale:0.8},{opacity:1,filter:"blur(0px)",scale:1,duration:0.5},at("s-morph")+0.25);
-      tl.to("#mA",{opacity:0,filter:"blur(24px)",scale:1.3,duration:0.6,ease:"power2.in"},at("s-morph")+1.3);
-      tl.fromTo("#mB",{opacity:0,filter:"blur(24px)",scale:0.7},{opacity:1,filter:"blur(0px)",scale:1,duration:0.6,ease:"power2.out"},at("s-morph")+1.5);
+      tl.fromTo("#mA",{opacity:0,filter:"blur(18px)",scale:0.85},{opacity:1,filter:"blur(0px)",scale:1,duration:0.55,ease:"power2.out"},at("s-morph")+0.3);
+      tl.to("#mA",{opacity:0,filter:"blur(22px)",scale:0.72,duration:0.5,ease:"power2.in"},at("s-morph")+1.7);
+      tl.fromTo("#mB",{opacity:0,filter:"blur(22px)",scale:0.72},{opacity:1,filter:"blur(0px)",scale:1,duration:0.6,ease:"back.out(1.5)"},at("s-morph")+2.35);
       gsap.utils.toArray("#s-recap .rtile").forEach(function(t,i){ tl.fromTo(t,{opacity:0,scale:0.85},{opacity:1,scale:1,duration:0.28},at("s-recap")+0.25+i*0.09); });
       tl.fromTo("#grain",{opacity:0},{opacity:0.5,duration:0.4},at("s-recap")+0.5);
       tl.to("#grain",{opacity:0.32,duration:0.16,repeat:10,yoyo:true},at("s-recap")+0.9);
