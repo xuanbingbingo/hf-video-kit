@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=1080, height=1920" />
     <title>effect-showcase-long</title>
     <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+    <script src="china-data.js"></script>
     <script src="transcript.js"></script>
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -42,6 +44,10 @@
       .bar .val { position: absolute; top: -52px; left: 0; right: 0; text-align: center; font-family: "SF Mono",Menlo,monospace; font-size: 34px; color: #f2ede1; opacity: 0; }
       .axis { position: absolute; left: 40px; right: 40px; bottom: 228px; height: 2px; background: rgba(233,228,216,0.25); }
       .city { position: absolute; width: 22px; height: 22px; border-radius: 50%; background: #d9a441; opacity: 0; }
+      .mapsvg-p { position: absolute; inset: 40px 20px 120px 20px; border: 1px solid rgba(233,228,216,0.1); border-radius: 18px; background: rgba(90,122,154,0.05); }
+      .land { fill: rgba(110,140,175,0.30); stroke: rgba(170,200,230,0.55); stroke-width: 1.4; }
+      .cdot { fill: #d9a441; } .clbl { fill: #e9e4d8; font-family: "SF Mono",Menlo,monospace; font-size: 30px; }
+      .cline { fill: none; stroke: #d9a441; stroke-width: 5; stroke-linecap: round; }
       .city .lbl { position: absolute; left: 30px; top: -6px; white-space: nowrap; font-family: "SF Mono",Menlo,monospace; font-size: 26px; color: #e9e4d8; }
       .post { display: flex; gap: 22px; padding: 28px 32px; align-items: flex-start; opacity: 0; }
       .post .ava { width: 72px; height: 72px; border-radius: 50%; flex: 0 0 72px; background: linear-gradient(135deg,#d9a441,#5a7a9a); }
@@ -171,10 +177,7 @@
 
         <div class="slide clip" id="s-map1" data-scene="map" data-start="93.83" data-duration="8.32" data-track-index="2" style="visibility:hidden">
           <span class="scene-tag">地图 · 一线到下沉（示意）</span>
-          <div style="position:absolute;inset:40px 20px 120px 20px;border:1px solid rgba(233,228,216,0.1);border-radius:18px;background:rgba(90,122,154,0.05)">
-            <div class="city" id="mp1a" style="left:20%;top:28%"><span class="lbl">北京</span></div><div class="city" id="mp1b" style="left:32%;top:60%"><span class="lbl">上海</span></div>
-            <div class="city" id="mp1c" style="left:58%;top:50%"><span class="lbl">县城</span></div><div class="city" id="mp1d" style="left:72%;top:30%"><span class="lbl">乡镇</span></div>
-          </div><span class="demo-tag">示意</span>
+          <svg id="map1svg" class="mapsvg-p" viewBox="0 0 912 1020" preserveAspectRatio="none"></svg><span class="demo-tag">示意</span>
         </div>
 
         <div class="slide clip" id="s-dev1" data-scene="device" data-start="102.2" data-duration="8.03" data-track-index="2" style="visibility:hidden">
@@ -244,10 +247,7 @@
 
         <div class="slide clip" id="s-map2" data-scene="map" data-start="187.65" data-duration="8.60" data-track-index="2" style="visibility:hidden">
           <span class="scene-tag">地图 · 机会流向（示意）</span>
-          <div style="position:absolute;inset:40px 20px 120px 20px;border:1px solid rgba(233,228,216,0.1);border-radius:18px;background:rgba(90,122,154,0.05)">
-            <div class="city" id="mp2a" style="left:18%;top:50%"><span class="lbl">内容</span></div><div class="city" id="mp2b" style="left:46%;top:35%"><span class="lbl">产品</span></div><div class="city" id="mp2c" style="left:74%;top:55%"><span class="lbl">服务</span></div>
-            <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"><polyline id="mp2line" points="160,260 420,200 660,290" fill="none" stroke="#d9a441" stroke-width="4" stroke-dasharray="600" stroke-dashoffset="600"/></svg>
-          </div><span class="demo-tag">示意</span>
+          <svg id="map2svg" class="mapsvg-p" viewBox="0 0 912 1020" preserveAspectRatio="none"></svg><span class="demo-tag">示意</span>
         </div>
 
         <div class="slide clip" id="s-dev2" data-scene="device" data-fx="shimmer" data-start="196.3" data-duration="8.26" data-track-index="2" style="visibility:hidden">
@@ -399,9 +399,35 @@
       var mo2={v:0}; tl.to(mo2,{v:32000,duration:2.4,ease:"power1.out",onUpdate:function(){document.getElementById("m2").innerHTML='<span class="u">¥</span>'+Math.round(mo2.v).toLocaleString();}},at("s-money2")+0.4);
       tl.fromTo("#m2",{scale:0.9},{scale:1,duration:0.4,ease:"back.out(2)"},at("s-money2")+0.4);
       // map x2
-      ["#mp1a","#mp1b","#mp1c","#mp1d"].forEach(function(c,i){ tl.fromTo(c,{opacity:0,scale:0.4},{opacity:1,scale:1,duration:0.4,ease:"back.out(2)"},at("s-map1")+0.4+i*0.45); });
-      ["#mp2a","#mp2b","#mp2c"].forEach(function(c,i){ tl.fromTo(c,{opacity:0,scale:0.4},{opacity:1,scale:1,duration:0.4,ease:"back.out(2)"},at("s-map2")+0.4+i*0.5); });
-      tl.fromTo("#mp2line",{strokeDashoffset:600},{strokeDashoffset:0,duration:1.2},at("s-map2")+0.8);
+      // ===== 现成中国地图 GeoJSON + fitExtent 大陆主体(竖版,同横版逻辑) =====
+      var CHINA = window.__CHINA;
+      var fitObj = {type:"MultiPoint",coordinates:[[73.5,18],[135.1,18],[135.1,53.6],[73.5,53.6]]};
+      var mapProj = d3.geoMercator().fitExtent([[50,90],[862,770]], fitObj);
+      var mapPathGen = d3.geoPath(mapProj);
+      var SVGNS = "http://www.w3.org/2000/svg";
+      function drawMap(svgId, cities, withLine){
+        var svg=document.getElementById(svgId);
+        var lp=document.createElementNS(SVGNS,"path"); lp.setAttribute("d",mapPathGen(CHINA)); lp.setAttribute("class","land"); svg.appendChild(lp);
+        if(withLine){
+          var pts=cities.map(function(c){return mapProj([c.lng,c.lat]);});
+          var pl=document.createElementNS(SVGNS,"polyline"); pl.setAttribute("points",pts.map(function(p){return p[0].toFixed(1)+","+p[1].toFixed(1);}).join(" "));
+          pl.setAttribute("class","cline"); pl.setAttribute("id",svgId+"-line"); pl.setAttribute("stroke-dasharray","1600"); pl.setAttribute("stroke-dashoffset","1600"); svg.appendChild(pl);
+        }
+        cities.forEach(function(c,i){
+          var xy=mapProj([c.lng,c.lat]);
+          var g=document.createElementNS(SVGNS,"g"); g.setAttribute("class","cpt"); g.setAttribute("id",svgId+"-c"+i); g.style.opacity=0;
+          var ci=document.createElementNS(SVGNS,"circle"); ci.setAttribute("cx",xy[0]); ci.setAttribute("cy",xy[1]); ci.setAttribute("r","13"); ci.setAttribute("class","cdot");
+          var t=document.createElementNS(SVGNS,"text"); t.setAttribute("x",xy[0]+24); t.setAttribute("y",xy[1]+9); t.setAttribute("class","clbl"); t.textContent=c.name;
+          g.appendChild(ci); g.appendChild(t); svg.appendChild(g);
+        });
+      }
+      var cityA=[{lng:116.4,lat:39.9,name:"北京"},{lng:121.5,lat:31.2,name:"上海"},{lng:104.1,lat:30.6,name:"成都"},{lng:108.9,lat:34.3,name:"西安"}];
+      var cityB=[{lng:121.5,lat:31.2,name:"内容"},{lng:114.3,lat:30.6,name:"产品"},{lng:104.1,lat:30.6,name:"服务"}];
+      drawMap("map1svg",cityA,false);
+      drawMap("map2svg",cityB,true);
+      cityA.forEach(function(c,i){ tl.fromTo("#map1svg-c"+i,{opacity:0},{opacity:1,duration:0.4,ease:"power2.out"},at("s-map1")+0.5+i*0.4); });
+      tl.fromTo("#map2svg-line",{strokeDashoffset:1600},{strokeDashoffset:0,duration:1.3,ease:"power2.inOut"},at("s-map2")+0.6);
+      cityB.forEach(function(c,i){ tl.fromTo("#map2svg-c"+i,{opacity:0},{opacity:1,duration:0.4},at("s-map2")+0.45+i*0.4); });
       // device x2
       tl.fromTo("#ph1",{opacity:0,y:40,scale:0.9},{opacity:1,y:0,scale:1,duration:0.7,ease:"power3.out"},at("s-dev1")+0.4);
       tl.fromTo("#gc2",{opacity:0,scale:0.85},{opacity:1,scale:1,duration:0.6,ease:"back.out(1.6)"},at("s-dev2")+0.4);

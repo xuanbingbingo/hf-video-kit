@@ -6,6 +6,9 @@
     <meta name="viewport" content="width=1920, height=1080" />
     <title>effect-showcase-long-h</title>
     <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+    <script src="china-data.js"></script>
     <script src="transcript.js"></script>
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -48,6 +51,7 @@
       .cdot { fill: #d9a441; }
       .clbl { fill: #e9e4d8; font-family: "SF Mono",Menlo,monospace; font-size: 30px; }
       .cline { fill: none; stroke: #d9a441; stroke-width: 4; stroke-linecap: round; }
+      .land { fill: rgba(110,140,175,0.30); stroke: rgba(170,200,230,0.55); stroke-width: 1.2; }
       /* social 横向并排 */
       .posts { display: flex; gap: 40px; max-width: 1500px; }
       .post { display: flex; gap: 22px; padding: 30px 36px; align-items: flex-start; opacity: 0; flex: 1; }
@@ -105,12 +109,12 @@
     </style>
   </head>
   <body>
-    <div id="root" data-composition-id="main" data-start="0" data-duration="164.5" data-width="1920" data-height="1080">
+    <div id="root" data-composition-id="main" data-start="0" data-duration="165" data-width="1920" data-height="1080">
       <div class="bg-glow"></div><div class="bg-glow-2"></div><div class="bg-grid"></div>
       <div class="ghost-word" id="ghost-word">场景库</div>
       <div class="top-bar" id="top-bar"><span>HYPERFRAMES · 一个人 + AI 能干多少活</span><span class="tag">全场景 · 横版</span></div>
       <div class="top-rule" id="top-rule"></div>
-      <audio id="el-voice" data-start="0" data-duration="163.19" data-track-index="1" src="assets/voice.wav" data-volume="1"></audio>
+      <audio id="el-voice" data-start="0" data-duration="163.54" data-track-index="1" src="assets/voice.wav" data-volume="1"></audio>
 
       <div class="stage">
         <div class="slide clip" id="s-title" data-scene="title" data-start="0.0" data-duration="6.79" data-track-index="2" style="visibility:hidden">
@@ -185,19 +189,7 @@
 
         <div class="slide clip" id="s-map1" data-scene="map" data-start="60.83" data-duration="5.32" data-track-index="2" style="visibility:hidden">
           <span class="scene-tag">地图 · 一线到下沉（示意）</span>
-          <svg class="mapsvg" viewBox="0 0 1580 660" preserveAspectRatio="none">
-            <g opacity="0.6">
-              <path class="cont" d="M120,120 L420,90 L560,180 L520,300 L360,360 L180,320 Z"/>
-              <path class="cont" d="M600,140 L1050,100 L1320,180 L1400,340 L1180,470 L820,440 L640,320 Z"/>
-              <path class="cont" d="M780,500 L1080,490 L1180,600 L900,640 L760,580 Z"/>
-            </g>
-            <g id="map1pts">
-              <g class="cpt"><circle class="cdot" cx="980" cy="220" r="13"/><text class="clbl" x="1004" y="230">北京</text></g>
-              <g class="cpt"><circle class="cdot" cx="1060" cy="320" r="13"/><text class="clbl" x="1084" y="330">上海</text></g>
-              <g class="cpt"><circle class="cdot" cx="1140" cy="410" r="13"/><text class="clbl" x="1164" y="420">县城</text></g>
-              <g class="cpt"><circle class="cdot" cx="860" cy="380" r="13"/><text class="clbl" x="884" y="390">乡镇</text></g>
-            </g>
-          </svg><span class="demo-tag">示意</span>
+          <svg class="mapsvg" id="map1svg" viewBox="0 0 1580 660" preserveAspectRatio="none"></svg><span class="demo-tag">示意</span>
         </div>
 
         <div class="slide clip" id="s-dev1" data-scene="device" data-start="66.2" data-duration="5.03" data-track-index="2" style="visibility:hidden">
@@ -267,17 +259,7 @@
 
         <div class="slide clip" id="s-map2" data-scene="map" data-start="121.65" data-duration="5.60" data-track-index="2" style="visibility:hidden">
           <span class="scene-tag">地图 · 机会流向（示意）</span>
-          <svg class="mapsvg" viewBox="0 0 1580 660" preserveAspectRatio="none">
-            <g opacity="0.55">
-              <path class="cont" d="M120,140 L460,110 L600,210 L540,330 L320,380 L160,330 Z"/>
-              <path class="cont" d="M680,160 L1120,120 L1380,210 L1420,380 L1140,480 L820,440 Z"/>
-            </g>
-            <!-- 连线与点同一坐标系，先画线再画点 -->
-            <polyline class="cline" id="map2line" points="320,440 760,260 1240,420" stroke-dasharray="1400" stroke-dashoffset="1400"/>
-            <g class="cpt" id="mp2a"><circle class="cdot" cx="320" cy="440" r="14"/><text class="clbl" x="300" y="500">内容</text></g>
-            <g class="cpt" id="mp2b"><circle class="cdot" cx="760" cy="260" r="14"/><text class="clbl" x="740" y="225">产品</text></g>
-            <g class="cpt" id="mp2c"><circle class="cdot" cx="1240" cy="420" r="14"/><text class="clbl" x="1220" y="480">服务</text></g>
-          </svg><span class="demo-tag">示意</span>
+          <svg class="mapsvg" id="map2svg" viewBox="0 0 1580 660" preserveAspectRatio="none"></svg><span class="demo-tag">示意</span>
         </div>
 
         <div class="slide clip" id="s-dev2" data-scene="device" data-fx="shimmer" data-start="127.3" data-duration="5.26" data-track-index="2" style="visibility:hidden">
@@ -334,7 +316,7 @@
     <script>
       window.__timelines = window.__timelines || {};
       var tl = gsap.timeline({ paused: true });
-      var DUR = 164.5;
+      var DUR = 165;
       var BREAK_RE = /[。！？，、；…：]/;
       var KEYWORDS = ["一个人","差距","免费","关注","能力","取代","放大"];
       var words = window.__TRANSCRIPT || [];
@@ -379,12 +361,12 @@
         if (t1 < DUR - 0.2) { tl.to("#" + id, { opacity: 0, duration: 0.3, ease: "sine.in" }, t1 - 0.3); tl.set("#" + id, { visibility: "hidden" }, t1); }
       }
       var SEQ = [
-        ["s-title",0],["s-big1",6.84],["s-bars1",13.99],["s-chart1",20.85],["s-cmp1",27.59],
-        ["s-flow1",34.52],["s-code1",41.43],["s-list1",45.06],["s-social1",49.12],["s-money1",55.31],
-        ["s-map1",60.83],["s-dev1",66.2],["s-big2",71.28],["s-bars2",77.09],["s-chart2",83.14],
-        ["s-list2",88.59],["s-cmp2",94.38],["s-code2",99.66],["s-money2",104.75],["s-social2",110.1],
-        ["s-flow2",115.2],["s-map2",121.65],["s-dev2",127.3],["s-chart3",132.61],["s-morph",137.73],
-        ["s-big3",142.77],["s-list3",146.93],["s-recap",153.2],["s-cta",158.62]
+        ["s-title",0],["s-big1",6.85],["s-bars1",13.99],["s-chart1",20.86],["s-cmp1",27.59],
+        ["s-flow1",34.52],["s-code1",41.42],["s-list1",45.05],["s-social1",49.11],["s-money1",55.31],
+        ["s-map1",60.82],["s-dev1",66.20],["s-big2",71.33],["s-bars2",77.13],["s-chart2",83.18],
+        ["s-list2",88.64],["s-cmp2",94.43],["s-code2",100.03],["s-money2",105.07],["s-social2",110.43],
+        ["s-flow2",115.52],["s-map2",121.97],["s-dev2",127.62],["s-chart3",132.94],["s-morph",138.05],
+        ["s-big3",143.10],["s-list3",147.26],["s-recap",153.53],["s-cta",158.97]
       ];
       for (var si = 0; si < SEQ.length; si++) { showSlide(SEQ[si][0], SEQ[si][1], si + 1 < SEQ.length ? SEQ[si+1][1] : DUR); }
       var S = {}; SEQ.forEach(function(x){ S[x[0]] = x[1]; });
@@ -416,9 +398,40 @@
       tl.fromTo("#p2a",{opacity:0,y:24},{opacity:1,y:0,duration:0.45},at("s-social2")+0.3);
       var mo1={v:0}; tl.to(mo1,{v:8600,duration:1.6,ease:"power1.out",onUpdate:function(){document.getElementById("m1").innerHTML='<span class="u">¥</span>'+Math.round(mo1.v).toLocaleString();}},at("s-money1")+0.3); tl.fromTo("#m1",{scale:0.9},{scale:1,duration:0.35,ease:"back.out(2)"},at("s-money1")+0.3);
       var mo2={v:0}; tl.to(mo2,{v:32000,duration:1.8,ease:"power1.out",onUpdate:function(){document.getElementById("m2").innerHTML='<span class="u">¥</span>'+Math.round(mo2.v).toLocaleString();}},at("s-money2")+0.3); tl.fromTo("#m2",{scale:0.9},{scale:1,duration:0.35,ease:"back.out(2)"},at("s-money2")+0.3);
-      gsap.utils.toArray("#map1pts .cpt").forEach(function(c,i){ tl.fromTo(c,{opacity:0},{opacity:1,duration:0.35,ease:"power2.out"},at("s-map1")+0.4+i*0.45); var dot=c.querySelector(".cdot"); tl.fromTo(dot,{attr:{r:6}},{attr:{r:13},duration:0.4,ease:"back.out(2)"},at("s-map1")+0.4+i*0.45); });
-      tl.fromTo("#map2line",{strokeDashoffset:1400},{strokeDashoffset:0,duration:1.3,ease:"power2.inOut"},at("s-map2")+0.6);
-      ["#mp2a","#mp2b","#mp2c"].forEach(function(id,i){ tl.fromTo(id,{opacity:0},{opacity:1,duration:0.35},at("s-map2")+0.35+i*0.4); });
+      // ===== 现成中国地图 GeoJSON（阿里 DataV，含台湾南海）+ fitSize 自动居中 =====
+      var CHINA = window.__CHINA;
+      // 用 MultiPoint 四角点(无多边形缠绕坑) fit 到大陆主体范围(纬度18-53.6)，让大陆填满、城市分散
+      var fitObj = {type:"MultiPoint", coordinates:[[73.5,18],[135.1,18],[135.1,53.6],[73.5,53.6]]};
+      var mapProj = d3.geoMercator().fitExtent([[70,30],[1510,630]], fitObj);
+      var mapPathGen = d3.geoPath(mapProj);
+      var SVGNS = "http://www.w3.org/2000/svg";
+      function drawMap(svgId, cities, withLine){
+        var svg = document.getElementById(svgId);
+        var lp = document.createElementNS(SVGNS,"path"); lp.setAttribute("d", mapPathGen(CHINA)); lp.setAttribute("class","land");
+        svg.appendChild(lp);
+        if (withLine){
+          var pts = cities.map(function(c){ return mapProj([c.lng,c.lat]); });
+          var pl = document.createElementNS(SVGNS,"polyline");
+          pl.setAttribute("points", pts.map(function(p){ return p[0].toFixed(1)+","+p[1].toFixed(1); }).join(" "));
+          pl.setAttribute("class","cline"); pl.setAttribute("id", svgId+"-line");
+          pl.setAttribute("stroke-dasharray","2600"); pl.setAttribute("stroke-dashoffset","2600");
+          svg.appendChild(pl);
+        }
+        cities.forEach(function(c,i){
+          var xy = mapProj([c.lng,c.lat]);
+          var g = document.createElementNS(SVGNS,"g"); g.setAttribute("class","cpt"); g.setAttribute("id", svgId+"-c"+i); g.style.opacity = 0;
+          var ci = document.createElementNS(SVGNS,"circle"); ci.setAttribute("cx",xy[0]); ci.setAttribute("cy",xy[1]); ci.setAttribute("r","12"); ci.setAttribute("class","cdot");
+          var t = document.createElementNS(SVGNS,"text"); t.setAttribute("x",xy[0]+22); t.setAttribute("y",xy[1]+9); t.setAttribute("class","clbl"); t.textContent = c.name;
+          g.appendChild(ci); g.appendChild(t); svg.appendChild(g);
+        });
+      }
+      var cityA = [{lng:116.4,lat:39.9,name:"北京"},{lng:121.5,lat:31.2,name:"上海"},{lng:104.1,lat:30.6,name:"成都"},{lng:108.9,lat:34.3,name:"西安"}];
+      var cityB = [{lng:121.5,lat:31.2,name:"内容"},{lng:114.3,lat:30.6,name:"产品"},{lng:104.1,lat:30.6,name:"服务"}];
+      drawMap("map1svg", cityA, false);
+      drawMap("map2svg", cityB, true);
+      cityA.forEach(function(c,i){ tl.fromTo("#map1svg-c"+i,{opacity:0},{opacity:1,duration:0.4,ease:"power2.out"},at("s-map1")+0.5+i*0.4); });
+      tl.fromTo("#map2svg-line",{strokeDashoffset:2600},{strokeDashoffset:0,duration:1.3,ease:"power2.inOut"},at("s-map2")+0.6);
+      cityB.forEach(function(c,i){ tl.fromTo("#map2svg-c"+i,{opacity:0},{opacity:1,duration:0.4},at("s-map2")+0.45+i*0.4); });
       tl.fromTo("#ph1",{opacity:0,y:40,scale:0.92},{opacity:1,y:0,scale:1,duration:0.6,ease:"power3.out"},at("s-dev1")+0.3);
       tl.fromTo("#gc2",{opacity:0,scale:0.88},{opacity:1,scale:1,duration:0.5,ease:"back.out(1.6)"},at("s-dev2")+0.3);
       var gv={v:0}; tl.to(gv,{v:240,duration:1.6,ease:"power1.out",onUpdate:function(){document.getElementById("gcn").innerHTML='<span class="u">+</span>'+Math.round(gv.v)+'<span class="u">%</span>';}},at("s-dev2")+0.5);
