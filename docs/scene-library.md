@@ -7,9 +7,11 @@
 ## 三级路由规则（场景路由步骤的完整定义）
 
 ```
-逐段文案 → ① 查 CLAUDE.md 主判定表（12 类，验证过的主力，优先命中）
-         → ② 不中 → 查本文件「可路由内容场景」（29 类），选最匹配 block 改造
+逐段文案 → ① 查 CLAUDE.md 主判定表（手写场景 11 行 + AnimUtils 30 行，全部常驻内存）
+         → ② 不中 → 查本文件「第一~六节」官方 registry，选最匹配 block 改造
          → ③ 仍不中 → 手写，风格遵循 CLAUDE.md 视觉规范
+
+注：第七节已升入 CLAUDE.md 主判定表，本文件 §七 仅保留为函数签名 + 源标记文档
 ```
 
 **取 block 源码的途径**（按优先级）：
@@ -117,6 +119,83 @@
 `vpn-youtube-spot`、`blue-sweater-intro-video`（特定产品成品片）；
 `warm-grain`、`swiss-grid`、`vignelli`、`play-mode`、`vscode-theme-visualizer`（风格/工具示范，
 做新视觉方向时看结构用）。
+
+---
+
+## 七、本工作流自制动效（hf-video-kit 原生，animation-utils.js）
+
+> 以下动效不依赖官方 registry，使用纯 GSAP + 自制 Remotion 贝塞尔曲线实现，共 30 个函数。
+> **使用方法**：把 `tools/animation-utils.js` 的**完整内容内联**到 `index.html` 的 `<script>` 块中
+>（⚠️ 禁止用 `<script src="...">` 外链，headless Chrome 会因 MIME 识别问题拒绝执行，
+> 导致所有 `remotion.*` ease 未注册，渲染全黑。参考：`examples/remotion-style-demo/landscape/index.html`）。
+
+### 四条注册 ease（内联 animation-utils.js 后即可在任意 tween 中使用）
+
+| ease 名 | 对应 CSS cubic-bezier | 适用场景 |
+|---|---|---|
+| `remotion.snappy` | `(0.16, 1, 0.3, 1)` | UI/文字入场、kicker letter-spacing 展开、柱状图生长 |
+| `remotion.spring` | `(0.34, 1.56, 0.64, 1)` | 卡片弹出、数字 pop、有过冲感的元素 |
+| `remotion.easeIn` | `(0.32, 0, 0.67, 0)` | 元素退场 |
+| `remotion.smooth` | `(0.45, 0, 0.55, 1)` | 长段文字、平滑过渡 |
+
+---
+
+> 源标记：`hf` = hf-video-kit 原生（早于 Remotion 移植即存在）；`R` = 从 Remotion 动效模式移植，以 GSAP 重实现
+
+### 数据可视化（10 个）
+
+| 文案信号 | 函数 | 源 | 核心要点 |
+|---|---|---|---|
+| 单个核心指标/增长倍数/KPI | `counter(el, from, to, dur, ease, tl, at, suffix)` | hf | `{val:N}` tween + onUpdate 更新 textContent；suffix 支持 "%"/"万" |
+| 多类目横向对比/增长率排行 | `barGrow(selector, tl, at, opts)` | hf | scaleX:0→1，transformOrigin:"left center"，stagger 0.12s |
+| 竖向柱状图/K线风数据 | `barGrowVertical(selector, tl, at, opts)` | R | scaleY:0→1，transformOrigin:"center bottom"；opts.labelSelector 可同步驱动柱顶标签 |
+| 趋势折线/股价/增长曲线 | `lineChart(pathEl, tl, at, opts)` | R | SVG path stroke-dashoffset；需 path.getTotalLength() |
+| 面积图/填充趋势 | `areaChart(pathEl, fillEl, tl, at, opts)` | R | 折线 + 填充区 opacity 分步渐显 |
+| 圆环进度/完成率/占比 | `donutProgress(circleEl, labelEl, pct, tl, at, opts)` | R | SVG circle dashoffset；rotation:-90 对齐顶部；labelEl 同步滚数字 |
+| 气泡图/市值规模对比 | `bubbleChart(selector, tl, at, opts)` | R | scale:0→1 弹出，remotion.spring；stagger 0.1s |
+| 热力格子/GitHub 活跃图 | `heatGrid(selector, tl, at, opts)` | R | 逐格 scale:0.4→1 + opacity，stagger 0.025s |
+| 时钟/翻牌计数器 | `flipCounter(el, from, to, dur, tl, at)` | R | rotateX 翻转，最多 20 步采样，不超出 tween 上限 |
+| 人形图/Isotype 百分比 | `isotype(selector, highlightCount, tl, at, opts)` | R | 前 N 个亮色，其余 opacity:0.2；opts.dim 可调 |
+
+### 文字动效（7 个）
+
+| 文案信号 | 函数 | 源 | 核心要点 |
+|---|---|---|---|
+| 列表/卡片/多元素交错 | `staggerIn(selector, tl, at, opts)` | hf | 通用交错入场；opts 可覆盖 from/to/ease/stagger |
+| 结论段/金句/章节标题 | `charReveal(el, tl, at, opts)` | R | 逐字 span；opts.accentWords 命中词变金色 #d9a441；stagger 0.04s |
+| 长句/句子级入场 | `wordReveal(el, tl, at, opts)` | R | 空格分词，整词 y:24→0；比逐字快 |
+| 模拟输入/Prompt/代码 | `typewriter(el, text, tl, at, opts)` | R | .tw-txt + .tw-cur 光标；speed 可调；auBlink CSS 已内置 |
+| 关键词强调/高亮段落 | `highlightSweep(el, tl, at, opts)` | R | 绝对定位色块 width:0→100%；默认 rgba(217,164,65,0.3) |
+| 概念切换/词语变形 | `morphText(el, texts, interval, tl, at)` | R | blur:0→10px→0 切换词表；第 i 词在 at+i*interval 出现 |
+| 列表行/多行文字推入 | `lineSlideIn(selector, tl, at, opts)` | R | x:-60→0 + opacity；stagger 0.12s |
+
+### UI 组件（6 个）
+
+| 文案信号 | 函数 | 源 | 核心要点 |
+|---|---|---|---|
+| 多张卡片同屏展示 | `cardSpring(selector, tl, at, opts)` | R | scale:0.82→1, y:40→0, remotion.spring；stagger 0.3s |
+| 加载进度/完成比例 | `progressBar(fillEl, targetPct, tl, at, opts)` | R | width:0→pct%；duration 0.8s |
+| 圆形完成率/技能环 | `progressRing(circleEl, labelEl, pct, tl, at, opts)` | R | 同 donutProgress 结构；labelEl 可为 null |
+| 里程碑/发展历史 | `timelineNodes(lineEl, dotsSel, labelsSel, tl, at, opts)` | R | 竖线 scaleY 生长 + 节点 spring 弹出 + 标签 x:20→0 |
+| 标签云/技术栈/关键词 | `tagPop(selector, tl, at, opts)` | R | scale:0.6→1 弹入；stagger 0.1s；适合圆角 tag 元素 |
+| 对话/问答/角色互动 | `chatBubbles(selector, tl, at, opts)` | R | data-side="left\|right" 控制方向；x:±50→0；stagger 0.55s |
+
+### 氛围效果（7 个）
+
+| 文案信号 | 函数 | 源 | 核心要点 |
+|---|---|---|---|
+| 脉冲/心跳/信号感 | `ripplePulse(containerEl, tl, at, opts)` | R | DOM 圆环 scale:1→2.5, opacity:0.7→0；opts.cycles 控制圈数 |
+| SVG 图形/箭头/连线 | `pathDraw(pathEl, tl, at, opts)` | R | stroke-dashoffset；lineChart 的可复用简化版 |
+| 颜色切换/状态变化 | `colorMorph(el, toColor, tl, at, opts)` | R | opts.prop 控制 color/background/borderColor 等 CSS 属性 |
+| "AI 感"/闪烁扫光 | `shimmer(el, tl, at, opts)` | R | 绝对定位渐变条 left:-80%→130%；el 需 overflow:hidden |
+| 爆款/庆祝/超标达成 | `particleBurst(el, tl, at, opts)` | R | 8 个圆点按 cos/sin 散射；opts.count/distance/color 可调 |
+| 双面卡/翻转揭秘 | `cardFlip3D(frontEl, backEl, tl, at, opts)` | R | CSS perspective rotateY；backfaceVisibility:hidden |
+| 动态渐变底/氛围底色 | `gradientFlow(el, tl, at, opts)` | R | backgroundPosition 0%→100%→0%（两段顺序 tween，无 repeat:-1） |
+
+> **与官方 registry 的分工**：
+> - `apple-money-count` 专做金额（$符号+绿闪），以上 `counter` 更适合非金额类指标
+> - `morph-text`（官方，SVG threshold）做黏稠变形；`morphText`（本库，blur 溶解）做轻量切词
+> - `shimmer-sweep`（官方 component）全片叠加层；`shimmer`（本库）单元素局部扫光
 
 ---
 

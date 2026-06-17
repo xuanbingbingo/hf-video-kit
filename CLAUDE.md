@@ -130,6 +130,11 @@ hf-video-kit/
 
 ## 场景判定表（文案内容 → 画面形态）
 
+> 三级路由：① 本表命中 → 直接用；② 不中 → 查 docs/scene-library.md §一~六（官方 registry）；③ 仍不中 → 手写
+> 规划分镜前**必须**先扫 **docs/scene-cheatsheet.md**（横览防偏科）；多样性硬约束见 **docs/anti-bias-rules.md**
+
+### 手写场景（hf 原生，无需 animation-utils.js）
+
 | 文案信号 | 场景 |
 |---|---|
 | 数字/趋势/占比 | 动画柱状图（SVG rect 高度动画，柱子卡着报数瞬间弹起，角落标 SOURCE） |
@@ -142,12 +147,63 @@ hf-video-kit/
 | 建议/清单/第一第二 | 编号清单逐条滑入（金圈数字 + 主句 + 灰色小字注解） |
 | 开场 | mono kicker（letterSpacing 收缩入场）+ 衬线大标题卡 |
 | 结尾 | 金句 + 金底关注按钮 scale 脉冲 |
-| 场景切换 | 无闪淡入淡出（出 0.35s / 入 0.45s）。⚠️ 禁用 glitch 切片和白闪——模式 A/B 通用，用户验收定论（6-12，曾误以为只限真人版） |
+| 场景切换 | 无闪淡入淡出（出 0.35s / 入 0.45s）。⚠️ 禁用 glitch 切片和白闪——模式 A/B 通用，用户验收定论（6-12） |
 
-本表查不中 → 查 **docs/scene-library.md**（官方 registry 全量索引：29 类扩展内容场景 + 转场白/黑名单 +
-取源方式，已按文案信号编好路由）；场景库也不中才手写，风格遵循下方视觉规范。
-⚠️ **本判定表是"主力快查"，不是"全部供给"**——只照它出片必然偏科（同信号永远同场景）。规划分镜前**必须**先扫
-**docs/scene-cheatsheet.md**（113 项横向总览），主动用没用过的；多样性硬约束 + data-scene 词表见 **docs/anti-bias-rules.md**。
+### AnimUtils 场景（需内联 tools/animation-utils.js，⚠️ 禁止 `<script src>`，必须直接粘贴进 `<script>` 块）
+
+> `hf` = hf-video-kit 原生；`R` = Remotion 模式移植（GSAP 重实现）
+> 函数签名与核心要点见 docs/scene-library.md §七
+
+**数据可视化**
+
+| 文案信号 | 函数 | 源 |
+|---|---|---|
+| 单个 KPI / 增长倍数弹出（非金额） | `AnimUtils.counter()` | hf |
+| 横向多类目对比 / 增长率排行 | `AnimUtils.barGrow()` | hf |
+| 竖向柱状图 / K线风数据 | `AnimUtils.barGrowVertical()` | R |
+| 趋势折线 / 股价走势 | `AnimUtils.lineChart()` | R |
+| 面积图 / 填充趋势 | `AnimUtils.areaChart()` | R |
+| 完成率 / 占比圆环 | `AnimUtils.donutProgress()` | R |
+| 气泡图 / 市值规模对比 | `AnimUtils.bubbleChart()` | R |
+| 热力格子 / GitHub 活跃图 | `AnimUtils.heatGrid()` | R |
+| 时钟 / 翻牌倒计时 | `AnimUtils.flipCounter()` | R |
+| 人形图 / Isotype 百分比 | `AnimUtils.isotype()` | R |
+
+**文字动效**
+
+| 文案信号 | 函数 | 源 |
+|---|---|---|
+| 列表 / 卡片 / 多元素交错入场 | `AnimUtils.staggerIn()` | hf |
+| 结论段 / 金句逐字揭示 | `AnimUtils.charReveal()` | R |
+| 长句 / 整词推入 | `AnimUtils.wordReveal()` | R |
+| 模拟输入 / AI Prompt 演示 | `AnimUtils.typewriter()` | R |
+| 关键词高亮强调 | `AnimUtils.highlightSweep()` | R |
+| 概念切换 / 词语变形 | `AnimUtils.morphText()` | R |
+| 多行文字 / 列表行推入 | `AnimUtils.lineSlideIn()` | R |
+
+**UI 组件**
+
+| 文案信号 | 函数 | 源 |
+|---|---|---|
+| 多张要点卡同屏弹出 | `AnimUtils.cardSpring()` | R |
+| 加载进度 / 完成比例条 | `AnimUtils.progressBar()` | R |
+| 圆形完成率 / 技能环 | `AnimUtils.progressRing()` | R |
+| 里程碑 / 发展历史时间轴 | `AnimUtils.timelineNodes()` | R |
+| 标签云 / 技术栈 / 关键词 | `AnimUtils.tagPop()` | R |
+| 对话 / 问答 / 角色互动 | `AnimUtils.chatBubbles()` | R |
+
+**氛围效果**
+
+| 文案信号 | 函数 | 源 |
+|---|---|---|
+| 脉冲 / 心跳 / 信号感 | `AnimUtils.ripplePulse()` | R |
+| SVG 图形 / 箭头 / 连线绘制 | `AnimUtils.pathDraw()` | R |
+| 颜色切换 / 状态变化 | `AnimUtils.colorMorph()` | R |
+| AI 感 / 单元素扫光 | `AnimUtils.shimmer()` | R |
+| 爆款 / 庆祝 / 超标达成 | `AnimUtils.particleBurst()` | R |
+| 双面卡 / 翻转揭秘 | `AnimUtils.cardFlip3D()` | R |
+| 动态渐变底 / 氛围底色 | `AnimUtils.gradientFlow()` | R |
+
 本机 episodes/ 若有历史成片，优先参考其 hf-project/index.html 的实现。
 官方 block 改造铁律：只搬结构，配色字体换成本规范；⚠️WebGL 块 snapshot 必查、失败走降级策略。
 本地若有 ~/aiProjects/hyperframes-repo 克隆，每期开工前 git pull 同步官方新增场景。

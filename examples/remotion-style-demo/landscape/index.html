@@ -1,0 +1,699 @@
+<!doctype html>
+<!--
+  Remotion 风格动效融合演示 — hf 横版 1920×1080
+  DUR = 43.238s (gen_voice_timed.py 输出)
+
+  场景布局：
+    s-intro    0.000 → 4.387    开场：kicker + 大标题入场（remotion.snappy）
+    s-counter  4.387 → 13.911   Block 1：数字累加器（remotion.spring + counter）
+    s-hbar     13.911 → 22.239  Block 2：横向柱状图（AnimUtils.barGrow）
+    s-spring   22.239 → 30.704  Block 3：卡片弹出（remotion.spring stagger）
+    s-reveal   30.704 → 43.238  Block 4：关键词逐字揭示 + 结尾
+-->
+<html lang="zh-CN" data-resolution="landscape">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1920, height=1080" />
+  <title>remotion-style-demo</title>
+  <script src="gsap.min.js"></script>
+  <script src="transcript.js"></script>
+  <script>
+  /* Remotion-style cubic-bezier eases for GSAP */
+  (function(){
+    if(typeof gsap==="undefined")return;
+    function cubicBezier(p1x,p1y,p2x,p2y){
+      var NI=8,NMS=0.001,SP=1e-7,SMI=10,kSTS=11,kSSS=1.0/(kSTS-1.0);
+      function A(a1,a2){return 1.0-3.0*a2+3.0*a1;}
+      function B(a1,a2){return 3.0*a2-6.0*a1;}
+      function C(a1){return 3.0*a1;}
+      function cb(t,a1,a2){return((A(a1,a2)*t+B(a1,a2))*t+C(a1))*t;}
+      function gs(t,a1,a2){return 3.0*A(a1,a2)*t*t+2.0*B(a1,a2)*t+C(a1);}
+      var sv=new Float32Array(kSTS);
+      if(p1x!==p1y||p2x!==p2y){for(var i=0;i<kSTS;++i)sv[i]=cb(i*kSSS,p1x,p2x);}
+      function getTForX(aX){
+        var is=0.0,cs=1,ls=kSTS-1;
+        for(;cs!==ls&&sv[cs]<=aX;++cs)is+=kSSS;
+        --cs;
+        var dist=(aX-sv[cs])/(sv[cs+1]-sv[cs]);
+        var gft=is+dist*kSSS;
+        var isl=gs(gft,p1x,p2x);
+        if(isl>=NMS){for(var i=0;i<NI;++i){var csl=gs(gft,p1x,p2x);if(csl===0.0)return gft;gft-=(cb(gft,p1x,p2x)-aX)/csl;}return gft;}
+        else if(isl===0.0)return gft;
+        var aA=is,aB=is+kSSS,i=0,cX,cT;
+        do{cT=aA+(aB-aA)/2.0;cX=cb(cT,p1x,p2x)-aX;if(cX>0.0)aB=cT;else aA=cT;}
+        while(Math.abs(cX)>SP&&++i<SMI);
+        return cT;
+      }
+      return function(p){if(p1x===p1y&&p2x===p2y)return p;if(p===0||p===1)return p;return cb(getTForX(p),p1y,p2y);};
+    }
+    function reg(name,p1x,p1y,p2x,p2y){gsap.registerEase(name,cubicBezier(p1x,p1y,p2x,p2y));}
+    reg("remotion.snappy",0.16,1,0.3,1);
+    reg("remotion.spring",0.34,1.56,0.64,1);
+    reg("remotion.easeIn",0.32,0,0.67,0);
+    reg("remotion.smooth",0.45,0,0.55,1);
+    window.AnimUtils={
+      counter:function(el,from,to,dur,ease,tl,at,sfx){
+        ease=ease||"remotion.snappy";sfx=sfx||"";
+        var obj={val:from},dec=(String(to).split(".")[1]||"").length;
+        var tp={val:to,duration:dur,ease:ease,onUpdate:function(){el.textContent=obj.val.toFixed(dec)+sfx;},onComplete:function(){el.textContent=to.toFixed(dec)+sfx;}};
+        if(tl)tl.to(obj,tp,at);else gsap.to(obj,tp);
+      },
+      staggerIn:function(sel,tl,at,opts){
+        opts=opts||{};
+        var fr=opts.from||{opacity:0,y:28,scale:0.94};
+        var to=opts.to||{opacity:1,y:0,scale:1,duration:0.55,ease:"remotion.snappy"};
+        var st=opts.stagger!==undefined?opts.stagger:0.1;
+        gsap.utils.toArray(sel).forEach(function(el,i){tl.fromTo(el,fr,Object.assign({},to),at+i*st);});
+      },
+      barGrow:function(sel,tl,at,opts){
+        opts=opts||{};var dur=opts.duration||0.6,st=opts.stagger!==undefined?opts.stagger:0.12,ease=opts.ease||"remotion.snappy";
+        gsap.utils.toArray(sel).forEach(function(el,i){tl.fromTo(el,{scaleX:0,transformOrigin:"left center"},{scaleX:1,duration:dur,ease:ease},at+i*st);});
+      }
+    };
+  })();
+  </script>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html, body { width:1920px; height:1080px; overflow:hidden; background:#0f131b; }
+    body { font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","微软雅黑",sans-serif; color:#e9e4d8; }
+    [data-composition-id="main"] { position:relative; width:1920px; height:1080px; overflow:hidden; background:#12161e; }
+
+    /* ── 背景装饰 ── */
+    .bg-glow {
+      position:absolute; top:-300px; left:-320px;
+      width:1100px; height:1100px; border-radius:50%;
+      background:radial-gradient(circle,rgba(217,164,65,.16) 0%,rgba(217,164,65,.05) 42%,transparent 68%);
+      pointer-events:none;
+    }
+    .bg-glow-2 {
+      position:absolute; bottom:-360px; right:-300px;
+      width:950px; height:950px; border-radius:50%;
+      background:radial-gradient(circle,rgba(90,122,154,.14) 0%,transparent 62%);
+      pointer-events:none;
+    }
+    .bg-grid {
+      position:absolute; inset:0;
+      background-image:linear-gradient(rgba(233,228,216,.04) 1px,transparent 1px),
+                       linear-gradient(90deg,rgba(233,228,216,.04) 1px,transparent 1px);
+      background-size:90px 90px; pointer-events:none;
+    }
+
+    /* ── 顶栏 ── */
+    .top-bar {
+      position:absolute; top:36px; left:80px; right:80px;
+      display:flex; justify-content:space-between; align-items:center;
+      font-family:"SF Mono",Menlo,"Cascadia Code",Consolas,monospace;
+      font-size:22px; letter-spacing:.1em; color:#8c97a8;
+    }
+    .top-bar .tag { color:#d9a441; }
+    .top-rule {
+      position:absolute; top:80px; left:80px; right:80px; height:2px;
+      background:linear-gradient(90deg,rgba(217,164,65,.7),rgba(233,228,216,.1));
+      transform-origin:left center;
+    }
+
+    /* ── 舞台 ── */
+    .stage {
+      position:absolute; top:104px; left:80px;
+      width:1760px; height:920px;
+    }
+    .slide {
+      position:absolute; inset:0;
+      display:none; flex-direction:column; justify-content:center;
+      gap:32px; padding:20px 0;
+    }
+
+    /* ── 公共组件 ── */
+    .kicker {
+      font-family:"SF Mono",Menlo,"Cascadia Code",Consolas,monospace;
+      font-size:24px; letter-spacing:.3em; color:#d9a441;
+    }
+    .h-serif {
+      font-family:"Songti SC","Source Han Serif SC","思源宋体","Noto Serif SC","SimSun",serif;
+      font-weight:900; line-height:1.2; letter-spacing:.02em;
+    }
+    .amber { color:#d9a441; }
+    .muted { color:#8c97a8; }
+
+    /* ── Block 1：数字累加器 ── */
+    #s-counter .counter-row {
+      display:flex; gap:48px; align-items:stretch;
+    }
+    .ctr-card {
+      flex:1; border:2px solid rgba(217,164,65,.25); border-radius:24px;
+      background:rgba(217,164,65,.06);
+      padding:42px 48px; display:flex; flex-direction:column; gap:18px;
+    }
+    .ctr-card .ctr-num {
+      font-size:96px; font-weight:900; color:#d9a441;
+      font-family:"SF Mono",Menlo,"Cascadia Code",Consolas,monospace;
+      line-height:1;
+    }
+    .ctr-card .ctr-label {
+      font-size:28px; color:#e9e4d8; font-weight:500;
+    }
+    .ctr-card .ctr-sub {
+      font-size:22px; color:#8c97a8;
+    }
+    .ctr-badge {
+      display:inline-flex; align-items:center; gap:8px;
+      background:rgba(217,164,65,.15); border-radius:100px;
+      padding:6px 20px;
+      font-family:"SF Mono",Menlo,monospace; font-size:20px; color:#d9a441;
+    }
+
+    /* ── Block 2：横向柱状图 ── */
+    #s-hbar .hbar-list {
+      display:flex; flex-direction:column; gap:28px;
+    }
+    .hbar-item {
+      display:flex; align-items:center; gap:28px;
+    }
+    .hbar-label {
+      width:220px; text-align:right; font-size:28px; color:#e9e4d8;
+      flex-shrink:0;
+    }
+    .hbar-track {
+      flex:1; height:52px; background:rgba(233,228,216,.06);
+      border-radius:10px; overflow:hidden; position:relative;
+    }
+    .hbar-fill {
+      position:absolute; inset:0; border-radius:10px;
+      background:linear-gradient(90deg,rgba(217,164,65,.85),rgba(217,164,65,.55));
+      transform-origin:left center;
+    }
+    .hbar-val {
+      width:100px; font-size:30px; font-weight:700;
+      color:#d9a441; flex-shrink:0;
+      font-family:"SF Mono",Menlo,monospace;
+    }
+
+    /* ── Block 3：卡片弹出 ── */
+    #s-spring .card-row {
+      display:flex; gap:48px;
+    }
+    .spring-card {
+      flex:1; border:2px solid rgba(233,228,216,.14); border-radius:28px;
+      background:rgba(233,228,216,.04);
+      padding:48px 44px; display:flex; flex-direction:column; gap:20px;
+    }
+    .spring-card .sc-icon {
+      font-size:56px; line-height:1;
+    }
+    .spring-card .sc-num {
+      font-size:80px; font-weight:900; color:#d9a441;
+      font-family:"SF Mono",Menlo,monospace; line-height:1;
+    }
+    .spring-card .sc-title {
+      font-size:30px; color:#e9e4d8; font-weight:600; line-height:1.35;
+    }
+    .spring-card .sc-desc {
+      font-size:24px; color:#8c97a8; line-height:1.55;
+    }
+    .spring-card.featured {
+      border-color:rgba(217,164,65,.4);
+      background:rgba(217,164,65,.07);
+    }
+
+    /* ── Block 4：关键词逐字揭示 ── */
+    #s-reveal .rev-title {
+      overflow:hidden; line-height:1.25;
+    }
+    .rev-char {
+      display:inline-block;
+      /* 每个字符独立动画 */
+    }
+    #s-reveal .rev-sub {
+      font-size:32px; color:#8c97a8; letter-spacing:.08em;
+    }
+    #s-reveal .cta-btn {
+      display:inline-flex; align-items:center; gap:16px;
+      background:rgba(217,164,65,.12); border:2px solid rgba(217,164,65,.5);
+      border-radius:100px; padding:18px 52px;
+      font-size:30px; color:#d9a441; letter-spacing:.15em;
+      font-family:"SF Mono",Menlo,monospace;
+    }
+    #s-reveal .cta-dot {
+      width:10px; height:10px; border-radius:50%; background:#d9a441;
+    }
+
+    /* ── 字幕 ── */
+    #captions {
+      position:absolute; bottom:32px; left:80px; width:1760px;
+      text-align:center; z-index:50; height:80px; pointer-events:none;
+    }
+    .cap-group {
+      position:absolute; left:0; right:0; top:0;
+      font-size:50px; font-weight:600; letter-spacing:.04em;
+      opacity:0; visibility:hidden;
+      text-shadow:0 4px 18px rgba(0,0,0,.7); white-space:nowrap;
+    }
+    .cap-group .ch { color:#5d6878; }
+    .cap-group .ch.kw-base { font-weight:700; }
+  </style>
+</head>
+<body>
+<div data-composition-id="main" data-width="1920" data-height="1080">
+  <!-- 背景层 -->
+  <div class="bg-glow"></div>
+  <div class="bg-glow-2"></div>
+  <div class="bg-grid" data-fx="grain"></div>
+
+  <!-- 顶栏 -->
+  <div class="top-bar">
+    <span><span class="tag">hf</span> × remotion style</span>
+    <span>animation-utils.js</span>
+  </div>
+  <div class="top-rule" id="top-rule"></div>
+
+  <!-- 配音 -->
+  <audio
+    class="clip" data-start="0" data-duration="43.238" data-track-index="1"
+    src="assets/voice.wav"
+  ></audio>
+
+  <div class="stage">
+
+    <!-- ────────────────────────────────
+         SLIDE 0 — 开场
+         data-scene="hero"
+         0.000 → 4.387s
+    ──────────────────────────────── -->
+    <div class="slide" id="s-intro" data-scene="hero" data-fx="vignette">
+      <div class="kicker" id="kicker-intro">MOTION TOOLKIT</div>
+      <div class="h-serif" style="font-size:88px;" id="title-intro">
+        四种高质量动效<br><span class="amber">已融入 hf 场景库</span>
+      </div>
+      <div id="sub-intro" style="font-size:30px;color:#8c97a8;letter-spacing:.06em;">
+        Remotion 贝塞尔曲线 + 弹簧物理 → GSAP · 开箱即用
+      </div>
+    </div>
+
+    <!-- ────────────────────────────────
+         SLIDE 1 — Block 1: 数字累加器
+         data-scene="numcard"
+         4.387 → 13.911s
+    ──────────────────────────────── -->
+    <div class="slide" id="s-counter" data-scene="numcard" data-fx="shimmer">
+      <div class="kicker" id="kicker-ctr">BLOCK 01 · COUNTER</div>
+      <div class="h-serif" style="font-size:52px;" id="title-ctr">
+        数字累加器 — <span class="amber">贝塞尔弹簧驱动计数</span>
+      </div>
+      <div class="counter-row" id="ctr-row">
+        <div class="ctr-card" id="ctr1">
+          <div class="ctr-num" id="n1">0</div>
+          <div class="ctr-label">文案处理效率</div>
+          <div class="ctr-sub">AI 驱动生产线</div>
+        </div>
+        <div class="ctr-card" id="ctr2">
+          <div class="ctr-num" id="n2">0</div>
+          <div class="ctr-label">场景模板数量</div>
+          <div class="ctr-sub">持续扩充中</div>
+        </div>
+        <div class="ctr-card" id="ctr3">
+          <div class="ctr-num" id="n3">0</div>
+          <div class="ctr-label">渲染成功率</div>
+          <div class="ctr-sub">自检通过统计</div>
+        </div>
+      </div>
+      <div id="ctr-badge" class="ctr-badge">ease: remotion.spring · bezier(0.34, 1.56, 0.64, 1)</div>
+    </div>
+
+    <!-- ────────────────────────────────
+         SLIDE 2 — Block 2: 横向柱状图
+         data-scene="hbarchart"
+         13.911 → 22.239s
+    ──────────────────────────────── -->
+    <div class="slide" id="s-hbar" data-scene="comparison" data-fx="grain">
+      <div class="kicker" id="kicker-hbar">BLOCK 02 · H-BAR CHART</div>
+      <div class="h-serif" style="font-size:52px;" id="title-hbar">
+        横向柱状图 — <span class="amber">错位生长动效</span>
+      </div>
+      <div class="hbar-list" id="hbar-list">
+        <div class="hbar-item">
+          <div class="hbar-label">remotion.snappy</div>
+          <div class="hbar-track"><div class="hbar-fill" id="hb1" style="width:94%"></div></div>
+          <div class="hbar-val" id="hb1v" style="opacity:0">94%</div>
+        </div>
+        <div class="hbar-item">
+          <div class="hbar-label">GSAP expo.out</div>
+          <div class="hbar-track"><div class="hbar-fill" id="hb2" style="width:76%;background:linear-gradient(90deg,rgba(140,151,168,.7),rgba(140,151,168,.4))"></div></div>
+          <div class="hbar-val" id="hb2v" style="opacity:0">76%</div>
+        </div>
+        <div class="hbar-item">
+          <div class="hbar-label">remotion.spring</div>
+          <div class="hbar-track"><div class="hbar-fill" id="hb3" style="width:88%"></div></div>
+          <div class="hbar-val" id="hb3v" style="opacity:0">88%</div>
+        </div>
+        <div class="hbar-item">
+          <div class="hbar-label">linear</div>
+          <div class="hbar-track"><div class="hbar-fill" id="hb4" style="width:40%;background:linear-gradient(90deg,rgba(140,151,168,.5),rgba(140,151,168,.25))"></div></div>
+          <div class="hbar-val" id="hb4v" style="opacity:0">40%</div>
+        </div>
+      </div>
+      <div id="hbar-note" style="font-size:22px;color:#8c97a8;opacity:0">
+        SOURCE: 主观动效流畅度评分 · DEMO 数据
+      </div>
+    </div>
+
+    <!-- ────────────────────────────────
+         SLIDE 3 — Block 3: 卡片弹出
+         data-scene="cardstack"
+         22.239 → 30.704s
+    ──────────────────────────────── -->
+    <div class="slide" id="s-spring" data-scene="comparison" data-fx="shimmer">
+      <div class="kicker" id="kicker-sp">BLOCK 03 · SPRING CARDS</div>
+      <div class="h-serif" style="font-size:52px;" id="title-sp">
+        卡片弹出 — <span class="amber">过冲弹簧交错入场</span>
+      </div>
+      <div class="card-row" id="sp-row">
+        <div class="spring-card" id="sp1">
+          <div class="sc-icon">⚡</div>
+          <div class="sc-num">0.16s</div>
+          <div class="sc-title">snappy 入场时间</div>
+          <div class="sc-desc">bezier(0.16, 1, 0.3, 1)<br>UI 元素快速贴近终点</div>
+        </div>
+        <div class="spring-card featured" id="sp2">
+          <div class="sc-icon">🌀</div>
+          <div class="sc-num">1.56</div>
+          <div class="sc-title">spring 过冲系数</div>
+          <div class="sc-desc">bezier(0.34, 1.56, 0.64, 1)<br>超越终点后回弹落定</div>
+        </div>
+        <div class="spring-card" id="sp3">
+          <div class="sc-icon">🎯</div>
+          <div class="sc-num">0.1s</div>
+          <div class="sc-title">卡片交错间隔</div>
+          <div class="sc-desc">stagger 0.1s<br>第一张落定后第二张起跳</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ────────────────────────────────
+         SLIDE 4 — Block 4: 关键词逐字揭示 + 结尾
+         data-scene="closing"
+         30.704 → 43.238s
+    ──────────────────────────────── -->
+    <div class="slide" id="s-reveal" data-scene="closing" data-fx="vignette">
+      <div class="kicker" id="kicker-rv">BLOCK 04 · CHAR REVEAL</div>
+      <div class="rev-title h-serif" id="rev-title-wrap" style="font-size:96px;"></div>
+      <div class="rev-sub" id="rev-sub" style="opacity:0;">
+        标题逐字从下方浮起 · remotion.snappy · stagger 0.04s/字
+      </div>
+      <div id="cta-wrap" style="opacity:0;">
+        <div class="cta-btn">
+          <div class="cta-dot" id="cta-dot"></div>
+          <span>直接插进任意 hf 场景</span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /stage -->
+
+  <!-- ── 字幕层（由 JS 动态生成） ── -->
+  <div id="captions"></div>
+
+</div><!-- /composition -->
+
+<script>
+/* ─── 常量 ─── */
+var DUR = 43.238;
+
+/* ─── 工具函数 ─── */
+function at(id) {
+  var el = document.getElementById(id);
+  if (!el) return 0;
+  var t = parseFloat(el.dataset.anchorTime || "0");
+  return t;
+}
+
+function charTime(substr) {
+  /* 在 __TRANSCRIPT 里找子串第一个字的 start 时间
+     注意：部分 entry 含多字符（如"种，"），需用位置映射表 */
+  var chars = window.__TRANSCRIPT;
+  var text = "";
+  var posToIdx = {};
+  chars.forEach(function(c, i) {
+    for (var j = 0; j < c.text.length; j++) {
+      posToIdx[text.length + j] = i;
+    }
+    text += c.text;
+  });
+  var pos = text.indexOf(substr);
+  if (pos < 0) return 0;
+  var charIdx = posToIdx[pos];
+  if (charIdx === undefined) return 0;
+  return chars[charIdx].start;
+}
+
+/* ─── showSlide / hideSlide（无闪淡入淡出） ─── */
+function showSlide(id, t0, t1) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  tl.set(el,  { opacity:0, display:"flex" }, t0);
+  tl.to(el,   { opacity:1, duration:0.45, ease:"power1.out" }, t0);
+  tl.to(el,   { opacity:0, duration:0.35, ease:"power1.in"  }, t1 - 0.35);
+  tl.set(el,  { display:"none" }, t1);
+}
+
+/* ─── 场景时间锚点（来自 transcript_chars.json） ─── */
+var T0 = 0;
+var T1 = charTime("第一种");    /* 4.387 */
+var T2 = charTime("第二种");    /* 13.911 */
+var T3 = charTime("第三种");    /* 22.239 */
+var T4 = charTime("第四种");    /* 30.704 */
+
+/* 动效子锚点 */
+var T_NUM   = charTime("数字");   /* 5.249 */
+var T_HBAR  = charTime("横向");   /* 14.738 */
+var T_CARD  = charTime("卡片");   /* 23.147 */
+var T_CHAR  = charTime("逐字");   /* 32.398 */
+var T_OUTRO = charTime("四套");   /* 39.079 */
+
+/* ─── 主时间轴 ─── */
+var tl = gsap.timeline({ paused: true });
+window.__timelines = window.__timelines || {};
+window.__timelines["main"] = tl;
+
+/* ── 顶栏装饰 ── */
+tl.set("#top-rule", { scaleX:0 }, 0);
+tl.to("#top-rule",  { scaleX:1, duration:0.8, ease:"remotion.snappy" }, 0.1);
+
+/* ───────────────────────────────
+   SLIDE 0 — 开场（0 → T1）
+─────────────────────────────── */
+showSlide("s-intro", T0, T1);
+
+tl.fromTo("#kicker-intro",
+  { opacity:0, letterSpacing:"0.6em" },
+  { opacity:1, letterSpacing:"0.3em", duration:0.55, ease:"remotion.snappy" }, T0 + 0.15);
+
+tl.fromTo("#title-intro",
+  { opacity:0, y:48 },
+  { opacity:1, y:0,  duration:0.7,  ease:"remotion.snappy" }, T0 + 0.4);
+
+tl.fromTo("#sub-intro",
+  { opacity:0, y:24 },
+  { opacity:1, y:0,  duration:0.6,  ease:"remotion.snappy" }, T0 + 0.75);
+
+/* ───────────────────────────────
+   SLIDE 1 — 数字累加器（T1 → T2）
+─────────────────────────────── */
+showSlide("s-counter", T1, T2);
+
+tl.fromTo("#kicker-ctr",
+  { opacity:0, letterSpacing:"0.6em" },
+  { opacity:1, letterSpacing:"0.3em", duration:0.5, ease:"remotion.snappy" }, T1 + 0.1);
+
+tl.fromTo("#title-ctr",
+  { opacity:0, y:30 },
+  { opacity:1, y:0,  duration:0.55, ease:"remotion.snappy" }, T1 + 0.3);
+
+/* 三张卡片用 spring 弹入（0.15s 间隔） */
+["#ctr1","#ctr2","#ctr3"].forEach(function(sel, i) {
+  tl.fromTo(sel,
+    { opacity:0, scale:0.88, y:24 },
+    { opacity:1, scale:1,    y:0,  duration:0.55, ease:"remotion.spring" },
+    T1 + 0.5 + i * 0.15
+  );
+});
+
+/* 数字累加：说到"弹出"（≈数字）时开始计数 */
+var obj1 = {val:0}, obj2={val:0}, obj3={val:0};
+tl.to(obj1, { val:12, duration:2.2, ease:"remotion.snappy",
+  onUpdate:function(){ document.getElementById("n1").textContent=Math.round(obj1.val)+"x"; }},
+  T_NUM);
+tl.to(obj2, { val:121, duration:2.2, ease:"remotion.snappy",
+  onUpdate:function(){ document.getElementById("n2").textContent=Math.round(obj2.val)+""; }},
+  T_NUM + 0.1);
+tl.to(obj3, { val:98, duration:2.2, ease:"remotion.snappy",
+  onUpdate:function(){ document.getElementById("n3").textContent=Math.round(obj3.val)+"%"; }},
+  T_NUM + 0.2);
+
+/* 角标 */
+tl.fromTo("#ctr-badge",
+  { opacity:0 }, { opacity:1, duration:0.4, ease:"power1.out" }, T_NUM + 1.8);
+
+/* ───────────────────────────────
+   SLIDE 2 — 横向柱状图（T2 → T3）
+─────────────────────────────── */
+showSlide("s-hbar", T2, T3);
+
+tl.fromTo("#kicker-hbar",
+  { opacity:0, letterSpacing:"0.6em" },
+  { opacity:1, letterSpacing:"0.3em", duration:0.5, ease:"remotion.snappy" }, T2 + 0.1);
+
+tl.fromTo("#title-hbar",
+  { opacity:0, y:30 },
+  { opacity:1, y:0,  duration:0.55, ease:"remotion.snappy" }, T2 + 0.3);
+
+/* 四根横向柱子依次生长（AnimUtils.barGrow） */
+["#hb1","#hb2","#hb3","#hb4"].forEach(function(sel, i) {
+  tl.fromTo(sel,
+    { scaleX:0, transformOrigin:"left center" },
+    { scaleX:1, duration:0.65, ease:"remotion.snappy" },
+    T_HBAR + i * 0.14
+  );
+  /* 数值标签在 bar 结束后出现 */
+  tl.to(document.getElementById(sel.replace("#hb","hb")+"v"),
+    { opacity:1, duration:0.25, ease:"power1.out" },
+    T_HBAR + i * 0.14 + 0.5
+  );
+});
+
+/* SOURCE 注释 */
+tl.fromTo("#hbar-note",
+  { opacity:0 }, { opacity:1, duration:0.3 }, T_HBAR + 1.4);
+
+/* ───────────────────────────────
+   SLIDE 3 — 卡片弹出（T3 → T4）
+─────────────────────────────── */
+showSlide("s-spring", T3, T4);
+
+tl.fromTo("#kicker-sp",
+  { opacity:0, letterSpacing:"0.6em" },
+  { opacity:1, letterSpacing:"0.3em", duration:0.5, ease:"remotion.snappy" }, T3 + 0.1);
+
+tl.fromTo("#title-sp",
+  { opacity:0, y:30 },
+  { opacity:1, y:0,  duration:0.55, ease:"remotion.snappy" }, T3 + 0.3);
+
+/* 三张卡片，remotion.spring 过冲弹入，间隔 0.3s */
+["#sp1","#sp2","#sp3"].forEach(function(sel, i) {
+  tl.fromTo(sel,
+    { opacity:0, scale:0.82, y:40 },
+    { opacity:1, scale:1,    y:0,
+      duration:0.65, ease:"remotion.spring" },
+    T_CARD + 0.2 + i * 0.3
+  );
+});
+
+/* ───────────────────────────────
+   SLIDE 4 — 关键词逐字揭示（T4 → DUR）
+─────────────────────────────── */
+showSlide("s-reveal", T4, DUR);
+
+tl.fromTo("#kicker-rv",
+  { opacity:0, letterSpacing:"0.6em" },
+  { opacity:1, letterSpacing:"0.3em", duration:0.5, ease:"remotion.snappy" }, T4 + 0.1);
+
+/* 动态生成逐字 span */
+var revText = "四套模板开箱即用";
+var wrap = document.getElementById("rev-title-wrap");
+wrap.innerHTML = "";
+for (var ci = 0; ci < revText.length; ci++) {
+  var span = document.createElement("span");
+  span.className = "rev-char";
+  span.textContent = revText[ci];
+  if (ci === 2 || ci === 4) span.style.color = "#d9a441"; /* 模板、开箱 高亮 */
+  wrap.appendChild(span);
+}
+
+/* 每个字符从 y:36 浮上来，间隔 0.04s */
+gsap.utils.toArray(".rev-char").forEach(function(ch, i) {
+  tl.fromTo(ch,
+    { opacity:0, y:36 },
+    { opacity:1, y:0, duration:0.5, ease:"remotion.snappy" },
+    T_CHAR + i * 0.04
+  );
+});
+
+/* 副标题 */
+tl.fromTo("#rev-sub",
+  { opacity:0, x:-24 },
+  { opacity:1, x:0, duration:0.55, ease:"remotion.snappy" },
+  T_CHAR + 0.7
+);
+
+/* CTA 按钮（outro，在 T_OUTRO 时出现） */
+tl.fromTo("#cta-wrap",
+  { opacity:0, scale:0.9 },
+  { opacity:1, scale:1, duration:0.55, ease:"remotion.spring" },
+  T_OUTRO + 0.1
+);
+
+/* CTA dot 脉冲（有限次，避免 infinite repeat 破坏确定性渲染） */
+var dotCycles = Math.floor((DUR - T_OUTRO - 0.5) / 1.2) - 1;
+if (dotCycles > 0) {
+  tl.to("#cta-dot",
+    { scale:1.5, repeat:dotCycles, yoyo:true, duration:0.6, ease:"sine.inOut" },
+    T_OUTRO + 0.5
+  );
+}
+
+/* ─────────────────────────────────────────
+   字幕系统：逐字点亮（改自 project-scaffold）
+──────────────────────────────────────── */
+(function buildCaptions() {
+  var chars = window.__TRANSCRIPT;
+  if (!chars) return;
+  var container = document.getElementById("captions");
+  var MAX_PER_GROUP = 11;
+  var groups = [];
+  var buf = [], bufText = "";
+  chars.forEach(function(c) {
+    /* 跳过纯标点独立 char */
+    if (/^[，。！？、：；""''（）…—]$/.test(c.text)) return;
+    buf.push(c);
+    bufText += c.text;
+    var last = buf[buf.length - 1];
+    var isSentenceEnd = /[。！？]/.test(c.text);
+    if (isSentenceEnd || bufText.length >= MAX_PER_GROUP) {
+      groups.push(buf.slice());
+      buf = []; bufText = "";
+    }
+  });
+  if (buf.length) groups.push(buf.slice());
+
+  var KW = ["动效","弹簧","贝塞尔","模板","场景","计数","生长","弹入","逐字","揭示","开箱","即用","融入"];
+
+  groups.forEach(function(g, gi) {
+    var div = document.createElement("div");
+    div.className = "cap-group";
+    var spans = [];
+    g.forEach(function(c) {
+      var span = document.createElement("span");
+      span.className = "ch" + (KW.some(function(k){ return c.text === k[0] || k.indexOf(c.text) >= 0; }) ? " kw-base" : "");
+      span.textContent = c.text;
+      div.appendChild(span);
+      spans.push(span);
+    });
+    container.appendChild(div);
+
+    var t0 = g[0].start;
+    var t1 = g[g.length - 1].end + 0.25;
+
+    tl.set(div,  { opacity:0, visibility:"visible" }, t0);
+    tl.to(div,   { opacity:1, duration:0.15 }, t0);
+    g.forEach(function(c, ci) {
+      tl.to(spans[ci], { color:"#f2ede1", duration:0.08 }, c.start);
+    });
+    tl.to(div,   { opacity:0, duration:0.2 }, t1);
+    tl.set(div,  { visibility:"hidden" }, t1 + 0.21);
+  });
+
+  /* 撑满时长 */
+  tl.set({}, {}, DUR);
+})();
+</script>
+</body>
+</html>
