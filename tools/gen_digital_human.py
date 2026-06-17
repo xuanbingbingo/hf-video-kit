@@ -22,14 +22,17 @@ import tempfile
 import shutil
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).parent))
+from _dh_platform import venv_python, default_device, maybe_mps_fallback
+
 SADTALKER_DIR = Path.home() / "aiProjects" / "SadTalker"
-SADTALKER_VENV_PYTHON = SADTALKER_DIR / "venv" / "bin" / "python"
+SADTALKER_VENV_PYTHON = venv_python(SADTALKER_DIR)
 
 MUSETALK_DIR = Path.home() / "aiProjects" / "MuseTalk"
-MUSETALK_VENV_PYTHON = MUSETALK_DIR / "venv" / "bin" / "python"
+MUSETALK_VENV_PYTHON = venv_python(MUSETALK_DIR)
 
 LIVEPORTRAIT_DIR = Path.home() / "aiProjects" / "LivePortrait"
-LIVEPORTRAIT_VENV_PYTHON = LIVEPORTRAIT_DIR / "venv" / "bin" / "python"
+LIVEPORTRAIT_VENV_PYTHON = venv_python(LIVEPORTRAIT_DIR)
 
 
 def run_sadtalker(portrait: str, audio: str, output: str,
@@ -59,7 +62,7 @@ def run_sadtalker(portrait: str, audio: str, output: str,
             cmd.append("--cpu")
 
         env = os.environ.copy()
-        env["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
+        maybe_mps_fallback(env, "cpu" if use_cpu else default_device())
         env["PYTHONPATH"] = str(SADTALKER_DIR)
 
         print(f"[gen_digital_human] Running SadTalker inference...")
@@ -106,7 +109,7 @@ def run_liveportrait(portrait: str, driving: str, output: str,
             cmd.append("--no-flag-relative-motion")
 
         env = os.environ.copy()
-        env["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
+        maybe_mps_fallback(env, default_device())
 
         print(f"[gen_digital_human] Running LivePortrait inference...")
         proc = subprocess.run(cmd, cwd=str(LIVEPORTRAIT_DIR), env=env)

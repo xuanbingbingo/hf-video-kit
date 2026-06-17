@@ -68,6 +68,66 @@ tools\.venv\Scripts\modelscope download --model keepitsimple/faster-whisper-larg
 
 验收：`tools\.venv\Scripts\python -c "import mediapipe, cv2, faster_whisper; print('mode-B OK')"`
 
+## （可选）模式 C：数字人出片的额外依赖
+
+只有要用「克隆音色 + 数字人头像动画出片」（CLAUDE.md 模式 C）时才装，模式 A/B 不需要。
+
+> ✅ **Windows + NVIDIA 显卡是 Mode C 体验最好的平台**：SadTalker / VoxCPM2 都是 CUDA 原生，
+> 比 Mac 的 MPS 快得多（`--size 512` 在 3060 级别约几分钟，Mac M 芯片要约 25min）。
+> 显存建议 ≥ 6 GB；无 N 卡只能跑 CPU（很慢，仅供验证）。
+> kit 的 Mode C 脚本会自动探测设备（有 N 卡 → cuda），无需手动指定。
+
+### 1. PyTorch CUDA 版（关键：别装成 CPU 版）
+
+```powershell
+# 先确认显卡驱动和 CUDA 版本
+nvidia-smi    # 右上角 CUDA Version，决定下面装哪个 whl（cu121 / cu118…）
+```
+
+### 2. VoxCPM2（克隆音色 TTS）
+
+```powershell
+cd $HOME\aiProjects
+git clone https://github.com/Plachtaa/VoxCPM2.git VoxCPM2
+cd VoxCPM2
+py -3.12 -m venv venv
+# CUDA 版 torch（按 nvidia-smi 的 CUDA 版本选 cu121 或 cu118）
+venv\Scripts\pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+venv\Scripts\pip install -e ".[inference]"
+# 下载模型（约 4.3 GB）
+venv\Scripts\python -c "from huggingface_hub import snapshot_download; snapshot_download('Plachtaa/VoxCPM2', local_dir='model')"
+```
+
+### 3. SadTalker（音频驱动口型动画）
+
+```powershell
+cd $HOME\aiProjects
+git clone https://github.com/OpenTalker/SadTalker.git SadTalker
+cd SadTalker
+py -3.12 -m venv venv
+venv\Scripts\pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+venv\Scripts\pip install -r requirements.txt
+# 预训练权重（约 600 MB）
+.\scripts\download_models.sh    # 没有 bash 就照该脚本里的 URL 手动下到 checkpoints\
+```
+
+### 4. 端到端验收（device 自动选 cuda）
+
+```powershell
+cd $HOME\aiProjects\hf-video-kit
+tools\.venv\Scripts\python tools\gen_dh_assets.py `
+  --portrait <正面头像.jpg> `
+  --ref-audio <你的录音.wav> `
+  --text "大家好，这是我的数字分身，模式 C 环境安装成功。" `
+  --out-dir $env:TEMP\dh-test\
+# 输出：voice.wav + face.mp4（756×756 方形）。N 卡自动走 cuda，想强制可加 --device cuda
+```
+
+> ⚠️ **Windows Mode C 注意**
+> - VoxCPM2 / SadTalker 的 venv 用 Python 3.12（`py -3.12`），别用 3.13+（依赖滞后）
+> - torch **必须装 CUDA 版**（带 `--index-url .../cuXXX`），装成默认 CPU 版会极慢且不报错
+> - kit 脚本已跨平台：venv 解释器自动用 `venv\Scripts\python.exe`，设备自动探测，无需改代码
+
 ## Windows 已知差异与排查
 
 - **字体**：封面工具按候选链找字体（思源宋体 → Noto Serif SC → 微软雅黑 Bold → 宋体），

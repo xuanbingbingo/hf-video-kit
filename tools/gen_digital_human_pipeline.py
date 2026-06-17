@@ -36,9 +36,12 @@ TOOLS_DIR = Path(__file__).parent
 VOXCPM2_SCRIPT = TOOLS_DIR / "gen_voice_clone.py"
 DIGITAL_HUMAN_SCRIPT = TOOLS_DIR / "gen_digital_human.py"
 
-LIVEPORTRAIT_VENV_PYTHON = Path.home() / "aiProjects" / "LivePortrait" / "venv" / "bin" / "python"
-SADTALKER_VENV_PYTHON = Path.home() / "aiProjects" / "SadTalker" / "venv" / "bin" / "python"
-VOXCPM2_VENV_PYTHON = Path.home() / "aiProjects" / "VoxCPM2" / "venv" / "bin" / "python"
+sys.path.insert(0, str(TOOLS_DIR))
+from _dh_platform import venv_python, resolve_device
+
+LIVEPORTRAIT_VENV_PYTHON = venv_python(Path.home() / "aiProjects" / "LivePortrait")
+SADTALKER_VENV_PYTHON = venv_python(Path.home() / "aiProjects" / "SadTalker")
+VOXCPM2_VENV_PYTHON = venv_python(Path.home() / "aiProjects" / "VoxCPM2")
 
 
 def _run(cmd, **kwargs):
@@ -50,7 +53,8 @@ def _run(cmd, **kwargs):
 
 def run_pipeline(portrait: str, reference_audio: str, text: str, output: str,
                  backend: str = "sadtalker", driving: str = None,
-                 device: str = "mps", **kwargs):
+                 device: str = "auto", **kwargs):
+    device = resolve_device(device)
     portrait = os.path.abspath(portrait)
     reference_audio = os.path.abspath(reference_audio)
     output = os.path.abspath(output)
@@ -153,8 +157,8 @@ if __name__ == "__main__":
                         help="Animation backend (default: sadtalker)")
     parser.add_argument("--driving", default=None,
                         help="Driving video for liveportrait backend")
-    parser.add_argument("--device", default="mps", choices=["mps", "cpu", "cuda"],
-                        help="VoxCPM2 inference device (default: mps)")
+    parser.add_argument("--device", default="auto", choices=["auto", "mps", "cpu", "cuda"],
+                        help="Inference device (default: auto — mps on Mac, cuda on NVIDIA, else cpu)")
     # SadTalker
     parser.add_argument("--still", action="store_true", default=True)
     parser.add_argument("--no-still", dest="still", action="store_false")

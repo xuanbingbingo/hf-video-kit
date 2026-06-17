@@ -111,9 +111,10 @@ hf-video-kit/
 1. **face.mp4 必须是方形**：gen_dh_assets.py 已保证输出 756×756，手动合成时同样要裁方形
 2. **object-position 默认 50% 20%**：SadTalker 人脸通常在帧上半部，20% 让头顶不被圆窗切掉
 3. **禁止全画布合成**：face.mp4 不上 1080×1920 底板，直接方形放 PIP，避免铺不满的黑边问题
-4. **SadTalker 约 25min**：M 系芯片跑 --size 512，提前告知用户；--size 256 约 8min 但质量稍差
+4. **SadTalker 耗时看设备**：M 系芯片 --size 512 约 25min；Windows/Linux + N 卡（cuda）约几分钟，提前告知用户；--size 256 更快但质量稍差
 5. **voice.wav 时长 ≠ face.mp4 时长**：SadTalker 可能比音频多几帧，DUR 以 voice.wav 为准
 6. **眼神必须正视**：用 gen_best_portrait.py 从视频选最佳帧，避免侧脸/低头作为驱动图像
+7. **设备自动探测，跨平台无需改代码**：`--device` 默认 `auto`（Mac→mps / N 卡→cuda / 否则 cpu）；venv 解释器路径已自动适配 Windows（`venv\Scripts\python.exe`）。Windows N 卡用户照 SETUP-WINDOWS.md「模式 C」装，torch 必须装 CUDA 版
 
 ## 真人原声模式（模式 B，7 步按序执行）
 

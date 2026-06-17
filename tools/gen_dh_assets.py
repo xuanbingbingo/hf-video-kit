@@ -26,15 +26,18 @@ from pathlib import Path
 TOOLS_DIR = Path(__file__).parent
 HF_KIT_DIR = TOOLS_DIR.parent
 
-VOXCPM2_PY   = Path.home() / "aiProjects" / "VoxCPM2"  / "venv" / "bin" / "python"
-SADTALKER_PY  = Path.home() / "aiProjects" / "SadTalker" / "venv" / "bin" / "python"
+sys.path.insert(0, str(TOOLS_DIR))
+from _dh_platform import venv_python, resolve_device, maybe_mps_fallback
+
+VOXCPM2_PY    = venv_python(Path.home() / "aiProjects" / "VoxCPM2")
+SADTALKER_PY  = venv_python(Path.home() / "aiProjects" / "SadTalker")
 SADTALKER_DIR = Path.home() / "aiProjects" / "SadTalker"
 
 
-def run(cmd, env=None, cwd=None):
+def run(cmd, env=None, cwd=None, device="mps"):
     print(f"[dh] $ {' '.join(str(c) for c in cmd)}")
     merged_env = dict(os.environ)
-    merged_env["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
+    maybe_mps_fallback(merged_env, device)
     if env:
         merged_env.update(env)
     proc = subprocess.run(cmd, env=merged_env, cwd=cwd)
@@ -53,9 +56,10 @@ def get_duration(path: str) -> float:
 
 
 def gen_assets(portrait: str, ref_audio: str, text: str, out_dir: str,
-               device: str = "mps",
+               device: str = "auto",
                face_size: int = 512,       # SadTalker --size (256 or 512)
                pip_size: int = 756):       # square face.mp4 edge length
+    device    = resolve_device(device)
     portrait  = os.path.abspath(portrait)
     ref_audio = os.path.abspath(ref_audio)
     out_dir   = os.path.abspath(out_dir)
@@ -77,7 +81,7 @@ def gen_assets(portrait: str, ref_audio: str, text: str, out_dir: str,
             "--text", text,
             "--output", raw_wav,
             "--device", device,
-        ])
+        ], device=device)
         if not os.path.exists(raw_wav):
             sys.exit("[dh] VoxCPM2 produced no output")
 
@@ -101,7 +105,7 @@ def gen_assets(portrait: str, ref_audio: str, text: str, out_dir: str,
             "-ar", "16000", "-ac", "1", st_wav,
         ], check=True)
 
-        run([
+        st_cmd = [
             str(SADTALKER_PY), "inference.py",
             "--driven_audio", st_wav,
             "--source_image", portrait,
@@ -109,7 +113,10 @@ def gen_assets(portrait: str, ref_audio: str, text: str, out_dir: str,
             "--still",
             "--preprocess", "full",
             "--size", str(face_size),
-        ], cwd=str(SADTALKER_DIR))
+        ]
+        if device == "cpu":
+            st_cmd.append("--cpu")
+        run(st_cmd, cwd=str(SADTALKER_DIR), device=device)
 
         # Find the mp4 (SadTalker outputs to timestamped subdir)
         mp4s = list(Path(sadtalker_dir).glob("**/*.mp4"))
@@ -154,7 +161,8 @@ if __name__ == "__main__":
     parser.add_argument("--ref-audio", required=True, help="Reference audio for voice clone (~5–30s, clean speech)")
     parser.add_argument("--text",      required=True, help="Text to synthesize")
     parser.add_argument("--out-dir",   required=True, help="Output directory (will create voice.wav + face.mp4)")
-    parser.add_argument("--device",    default="mps", choices=["mps", "cpu", "cuda"])
+    parser.add_argument("--device",    default="auto", choices=["auto", "mps", "cpu", "cuda"],
+                        help="auto = mps on Mac, cuda on NVIDIA, else cpu")
     parser.add_argument("--face-size", type=int, default=512, choices=[256, 512],
                         help="SadTalker output resolution (default 512)")
     parser.add_argument("--pip-size",  type=int, default=756,

@@ -17,12 +17,16 @@ import subprocess
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).parent))
+from _dh_platform import venv_python, resolve_device, maybe_mps_fallback
+
 VOXCPM2_DIR = Path.home() / "aiProjects" / "VoxCPM2"
-VOXCPM2_PYTHON = VOXCPM2_DIR / "venv" / "bin" / "python"
+VOXCPM2_PYTHON = venv_python(VOXCPM2_DIR)
 VOXCPM2_MODEL = VOXCPM2_DIR / "model"
 
 
-def clone_voice(reference_audio: str, text: str, output: str, device: str = "mps") -> str:
+def clone_voice(reference_audio: str, text: str, output: str, device: str = "auto") -> str:
+    device = resolve_device(device)
     if not VOXCPM2_PYTHON.exists():
         raise RuntimeError(f"VoxCPM2 venv not found at {VOXCPM2_PYTHON}")
     if not VOXCPM2_MODEL.exists():
@@ -40,7 +44,7 @@ def clone_voice(reference_audio: str, text: str, output: str, device: str = "mps
     ]
 
     env = os.environ.copy()
-    env["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
+    maybe_mps_fallback(env, device)
 
     print(f"[gen_voice_clone] Cloning voice from {reference_audio}...")
     proc = subprocess.run(cmd, cwd=str(VOXCPM2_DIR), env=env)
@@ -56,8 +60,8 @@ if __name__ == "__main__":
     parser.add_argument("--reference-audio", required=True, help="Reference audio file to clone voice from (wav/m4a)")
     parser.add_argument("--text", required=True, help="Text to synthesize in cloned voice")
     parser.add_argument("--output", required=True, help="Output WAV file path")
-    parser.add_argument("--device", default="mps", choices=["mps", "cpu", "cuda"],
-                        help="Inference device (default: mps for Apple Silicon)")
+    parser.add_argument("--device", default="auto", choices=["auto", "mps", "cpu", "cuda"],
+                        help="Inference device (default: auto — mps on Mac, cuda on NVIDIA, else cpu)")
     args = parser.parse_args()
 
     clone_voice(
