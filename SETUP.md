@@ -74,3 +74,84 @@ tools/.venv/bin/modelscope download --model keepitsimple/faster-whisper-large-v3
 ```
 
 验收：`tools/.venv/bin/python -c "import mediapipe, cv2, faster_whisper; print('mode-B OK')"`
+
+## （可选）模式 C：数字人出片的额外依赖
+
+只有要用「克隆音色 + 数字人头像动画出片」（CLAUDE.md 模式 C）时才装，模式 A/B 不需要。
+
+### 1. VoxCPM2（克隆音色 TTS）
+
+```bash
+# 克隆仓库（需 git-lfs：brew install git-lfs && git lfs install）
+cd ~/aiProjects
+git clone https://github.com/Plachtaa/VoxCPM2.git VoxCPM2
+cd VoxCPM2
+
+# 建 Python 3.12 venv（VoxCPM2 要求 3.12，brew install python@3.12 若没有）
+python3.12 -m venv venv
+venv/bin/pip install -e ".[inference]"
+
+# 下载模型（约 4.3 GB，国内网络慢时可先挂代理）
+venv/bin/python -c "from huggingface_hub import snapshot_download; snapshot_download('Plachtaa/VoxCPM2', local_dir='model')"
+```
+
+验收：
+```bash
+cd ~/aiProjects/VoxCPM2
+PYTORCH_ENABLE_MPS_FALLBACK=1 venv/bin/python -m voxcpm.cli clone \
+  --model-path model \
+  --reference-audio <你的录音.wav> \
+  --text "验收测试，克隆音色。" \
+  --output /tmp/voxcpm2-test.wav
+afplay /tmp/voxcpm2-test.wav
+```
+
+### 2. SadTalker（音频驱动口型动画）
+
+```bash
+cd ~/aiProjects
+git clone https://github.com/OpenTalker/SadTalker.git SadTalker
+cd SadTalker
+
+# 建 Python 3.12 venv
+python3.12 -m venv venv
+venv/bin/pip install torch torchvision torchaudio
+venv/bin/pip install -r requirements.txt
+
+# 下载预训练权重（约 600 MB，脚本自动下载到 checkpoints/）
+venv/bin/bash scripts/download_models.sh
+# 国内网络受限时，也可手动下载：
+#   wget https://github.com/OpenTalker/SadTalker/releases/download/v0.0.2-rc/mapping_00109-model.pth.tar -P checkpoints/
+#   （完整列表见 scripts/download_models.sh）
+```
+
+验收：
+```bash
+cd ~/aiProjects/SadTalker
+PYTORCH_ENABLE_MPS_FALLBACK=1 venv/bin/python inference.py \
+  --driven_audio /tmp/voxcpm2-test.wav \
+  --source_image <正面头像.jpg> \
+  --result_dir /tmp/sadtalker-test \
+  --still --preprocess full --size 256
+# 约 8 min（--size 512 更清晰但约 25 min）；输出在 /tmp/sadtalker-test/
+open /tmp/sadtalker-test/
+```
+
+### 3. 端到端验收（Mode C 全流程）
+
+```bash
+# 使用 hf-video-kit 的统一入口，一步生成 voice.wav + face.mp4
+cd ~/aiProjects/hf-video-kit
+tools/.venv/bin/python tools/gen_dh_assets.py \
+  --portrait <正面头像.jpg> \
+  --ref-audio <你的录音.wav> \
+  --text "大家好，这是我的数字分身，模式 C 环境安装成功。" \
+  --out-dir /tmp/dh-test/
+# 输出：/tmp/dh-test/voice.wav 和 /tmp/dh-test/face.mp4（756×756 方形）
+```
+
+> ⚠️ **注意事项**
+> - 参考录音建议 5～30 秒，安静环境、清晰发音，WAV 或高质量 M4A 均可
+> - SadTalker 在 Apple M 系芯片上必须加 `PYTORCH_ENABLE_MPS_FALLBACK=1`，否则算子报错
+> - `--size 512` 效果更好但约 25 min；`--size 256` 约 8 min，验收时用 256 即可
+> - gen_dh_assets.py 会自动把 SadTalker 输出缩放成方形 face.mp4，直接放入 PIP 圆窗即可

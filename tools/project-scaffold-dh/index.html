@@ -1,0 +1,247 @@
+<!doctype html>
+<!--
+  hf-video-kit 数字人模式骨架（竖版 1080×1920，模式 C 专用）
+  结构：数字人 PIP 圆窗（右下固定）+ hf 场景全屏，全程克隆音色
+  使用方法（给 Claude 的指引）：
+  1. 将整个 project-scaffold-dh/ 目录拷贝为 episodes/episode-NN/hf-project/
+  2. 将 gen_dh_assets.py 生成的文件拷入 hf-project/assets/：
+       assets/voice.wav  → -16 LUFS 克隆音色
+       assets/face.mp4   → 756×756 方形 SadTalker 口型视频（无音轨）
+  3. 用字幕工具或 VoxCPM2 时间戳生成 transcript.js（格式同 Mode A，见下方示例）
+  4. 修改 DUR（= voice.wav 实际秒数，用 ffprobe 查）
+  5. 按三级路由填充场景（判定表 → scene-library.md → 手写）
+     · 每个 .slide 必须有 data-scene / data-fx / data-start / data-duration / data-track-index
+     · 相邻场景 data-duration 减 0.01 防 track 边界溢出
+  铁律：有时序元素必须 data-start/data-duration/data-track-index + class="clip"；
+       时间轴 paused 并注册 window.__timelines["main"]；禁止 Date.now()/Math.random()；
+       数字人 face.mp4 必须是方形视频，object-position: 50% 20%（头顶不被圆窗切掉）；
+       渲染前跑 scene_audit.py，场景 ≥5 种且无 🔴 才可渲染。
+-->
+<html lang="zh-CN" data-resolution="portrait">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <title>my-video-dh</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="transcript.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { margin: 0; width: 1080px; height: 1920px; overflow: hidden; background: #0f131b; }
+      body { font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "微软雅黑", sans-serif; color: #e9e4d8; }
+      [data-composition-id="main"] { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #12161e; }
+
+      /* ===== 视觉规范底座（深色 + 琥珀金） ===== */
+      .bg-glow { position: absolute; top: -300px; left: -320px; width: 1000px; height: 1000px; border-radius: 50%;
+        background: radial-gradient(circle, rgba(217,164,65,0.16) 0%, rgba(217,164,65,0.05) 42%, transparent 68%); pointer-events: none; }
+      .bg-glow-2 { position: absolute; bottom: -360px; right: -300px; width: 950px; height: 950px; border-radius: 50%;
+        background: radial-gradient(circle, rgba(90,122,154,0.14) 0%, transparent 62%); pointer-events: none; }
+      .bg-grid { position: absolute; inset: 0;
+        background-image: linear-gradient(rgba(233,228,216,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(233,228,216,0.045) 1px, transparent 1px);
+        background-size: 90px 90px; pointer-events: none; }
+
+      /* ===== chrome 装饰 ===== */
+      .top-bar { position: absolute; top: 150px; left: 60px; right: 60px; display: flex; justify-content: space-between; align-items: center;
+        font-family: "SF Mono", Menlo, "Cascadia Code", Consolas, monospace; font-size: 22px; letter-spacing: 0.1em; color: #8c97a8; }
+      .top-bar .tag { color: #d9a441; }
+      .top-rule { position: absolute; top: 196px; left: 60px; right: 60px; height: 2px;
+        background: linear-gradient(90deg, rgba(217,164,65,0.7), rgba(233,228,216,0.12)); transform-origin: left center; }
+
+      /* ===== 场景舞台 ===== */
+      .stage { position: absolute; top: 250px; left: 64px; width: 952px; height: 1150px; }
+      .slide { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; gap: 28px; padding: 16px 4px; opacity: 0; visibility: hidden; }
+
+      /* ===== 常用元素样式（可按需增删） ===== */
+      .kicker { font-family: "SF Mono", Menlo, "Cascadia Code", Consolas, monospace; font-size: 24px; letter-spacing: 0.28em; color: #d9a441; }
+      .h-serif { font-family: "Songti SC", "Source Han Serif SC", "思源宋体", "Noto Serif SC", "SimSun", serif; font-weight: 900; line-height: 1.22; margin: 0; letter-spacing: 0.02em; }
+      .amber { color: #d9a441; }
+
+      /* ===== 模式 C：数字人 PIP 圆窗 ===== */
+      /* 固定右下角，face 直接起 PIP（无开场全屏→缩窗动画）。
+         object-position: 50% 20% → SadTalker 人脸偏上，头顶不被圆窗切掉。
+         若脸切掉过多可调高 Y%（越大越向下，越小越向上）。        */
+      #face-pos {
+        position: absolute;
+        left: 716px; top: 1126px; width: 300px; height: 300px;
+        border-radius: 150px;
+        border: 4px solid rgba(217,164,65,0.85);
+        overflow: hidden; z-index: 40;
+        box-shadow: 0 18px 50px rgba(0,0,0,0.55);
+      }
+      #face-pos video { width: 100%; height: 100%; object-fit: cover; object-position: 50% 20%; }
+
+      /* ===== 字幕 ===== */
+      #captions { position: absolute; bottom: 380px; left: 50px; width: 980px; text-align: center; z-index: 50; height: 100px; pointer-events: none; }
+      .cap-group { position: absolute; left: 0; right: 0; top: 0; font-size: 56px; font-weight: 600; letter-spacing: 0.04em;
+        opacity: 0; visibility: hidden; text-shadow: 0 4px 18px rgba(0,0,0,0.7); white-space: nowrap; }
+      .cap-group .ch { color: #5d6878; }
+      .cap-group .ch.kw-base { font-weight: 700; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main"
+         data-start="0"
+         data-duration="TODO_DUR"
+         data-width="1080" data-height="1920">
+
+      <div class="bg-glow"></div>
+      <div class="bg-glow-2"></div>
+      <div class="bg-grid"></div>
+
+      <!-- chrome：修改 top-bar 文字与 tag 标签 -->
+      <div class="top-bar" id="top-bar">
+        <span>TODO_CHANNEL · TODO_TOPIC</span>
+        <span class="tag">MODE C</span>
+      </div>
+      <div class="top-rule" id="top-rule"></div>
+
+      <!-- 配音轨：data-duration 填 voice.wav 实际秒数 -->
+      <audio id="el-voice"
+             data-start="0" data-duration="TODO_VOICE_DUR"
+             data-track-index="1"
+             src="assets/voice.wav" data-volume="1"></audio>
+
+      <!-- ===== 场景列表（按文案拆分，每段一个 .slide） ===== -->
+      <!-- 删掉占位示例，按三级路由填充真实场景 -->
+      <div class="stage">
+
+        <!-- 场景 0：title（示例，替换为实际文案） -->
+        <!-- TODO: 替换 data-scene / data-start / data-duration / 内部内容 -->
+        <div class="slide clip" id="slide-0"
+             data-scene="title" data-fx="grain"
+             data-start="0" data-duration="2.99" data-track-index="2">
+          <div class="kicker" id="s0-kicker">TODO_KICKER</div>
+          <h1 class="h-serif" id="s0-title" style="font-size: 96px">
+            TODO_TITLE<br /><span class="amber">TODO_SUBTITLE</span>
+          </h1>
+        </div>
+
+        <!-- 场景 1：bigtext（示例） -->
+        <div class="slide clip" id="slide-1"
+             data-scene="bigtext" data-fx="shimmer"
+             data-start="3.0" data-duration="2.99" data-track-index="2">
+          <div class="kicker" id="s1-kicker">TODO_KICKER</div>
+          <h2 class="h-serif" id="s1-text" style="font-size:80px">
+            TODO_BIG_TEXT<span class="amber">TODO_HIGHLIGHT</span>
+          </h2>
+        </div>
+
+        <!-- 继续按文案添加更多场景… -->
+        <!-- ⚠️ 至少 5 种不同 data-scene，渲染前跑 scene_audit.py 确认无 🔴 -->
+
+      </div>
+      <!-- /stage -->
+
+      <!-- 数字人 PIP：data-duration 填 face.mp4 实际秒数（ffprobe 查） -->
+      <div id="face-pos">
+        <video id="el-face"
+               data-start="0" data-duration="TODO_FACE_DUR"
+               data-track-index="0"
+               src="assets/face.mp4" muted playsinline></video>
+      </div>
+
+      <div id="captions"></div>
+    </div><!-- /root -->
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      var tl = gsap.timeline({ paused: true });
+      var DUR = TODO_DUR;   // ← 与 data-duration 保持一致
+
+      /* ===== 字幕系统（勿改，直接使用） ===== */
+      var BREAK_RE = /[。！？，、；…：]/;
+      var KEYWORDS = [/* TODO: 填关键词，会高亮成金色 */];
+      var words = window.__TRANSCRIPT || [];
+      var groups = [], cur = [];
+      for (var i = 0; i < words.length; i++) {
+        cur.push(words[i]);
+        if (BREAK_RE.test(words[i].text) || cur.length >= 11) { groups.push(cur); cur = []; }
+      }
+      if (cur.length) groups.push(cur);
+
+      var capRoot = document.getElementById("captions");
+      var groupMeta = [];
+      groups.forEach(function (g, gi) {
+        var el = document.createElement("div");
+        el.className = "cap-group"; el.id = "cg-" + gi;
+        var plain = g.map(function (w) { return w.text.replace(/[。！？，、；…：]/g, ""); }).join("");
+        var kwIdx = {};
+        KEYWORDS.forEach(function (kw) {
+          var from = 0, at;
+          while ((at = plain.indexOf(kw, from)) !== -1) {
+            for (var k = at; k < at + kw.length; k++) kwIdx[k] = true;
+            from = at + kw.length;
+          }
+        });
+        var pos = 0;
+        g.forEach(function (w) {
+          var sp = document.createElement("span");
+          var clean = w.text.replace(/[。！？；，、…：]/g, "");
+          var isKw = false;
+          for (var k = pos; k < pos + clean.length; k++) if (kwIdx[k]) isKw = true;
+          pos += clean.length;
+          sp.className = "ch" + (isKw ? " kw-base" : "");
+          sp.textContent = clean;
+          el.appendChild(sp);
+        });
+        capRoot.appendChild(el);
+        var start = g[0].start;
+        var nextStart = gi + 1 < groups.length ? groups[gi + 1][0].start : DUR;
+        var end = Math.min(g[g.length - 1].end + 0.7, nextStart - 0.04, DUR - 0.1);
+        groupMeta.push({ el: el, words: g, start: start, end: Math.max(end, g[g.length - 1].end) });
+      });
+
+      groupMeta.forEach(function (gm) {
+        var t0 = Math.max(0, gm.start - 0.1);
+        tl.fromTo(gm.el, { opacity: 0, y: 16, visibility: "visible" }, { opacity: 1, y: 0, duration: 0.22, ease: "power2.out" }, t0);
+        var spans = gm.el.querySelectorAll(".ch");
+        gm.words.forEach(function (w, wi) {
+          var sp = spans[wi];
+          if (!sp) return;
+          var bright = sp.classList.contains("kw-base") ? "#d9a441" : "#f2ede1";
+          tl.to(sp, { color: bright, duration: 0.16, ease: "none" }, Math.max(w.start, t0));
+        });
+        tl.to(gm.el, { opacity: 0, duration: 0.12, ease: "power2.in" }, gm.end - 0.12);
+        tl.set(gm.el, { opacity: 0, visibility: "hidden" }, gm.end);
+      });
+
+      /* ===== chrome 进场 ===== */
+      tl.fromTo("#top-rule", { scaleX: 0 }, { scaleX: 1, duration: 0.8, ease: "expo.out" }, 0.2);
+      tl.fromTo("#top-bar", { opacity: 0, y: -14 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 0.3);
+
+      /* ===== 场景切换辅助（直接调用即可） ===== */
+      function showSlide(id, t0, t1) {
+        tl.set("#" + id, { visibility: "visible" }, t0);
+        tl.fromTo("#" + id, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }, t0);
+        if (t1 < DUR - 0.15) {
+          tl.to("#" + id, { opacity: 0, duration: 0.3, ease: "power2.inOut" }, t1 - 0.3);
+          tl.set("#" + id, { visibility: "hidden" }, t1);
+        }
+      }
+
+      /* ===== TODO: 填写各场景的 GSAP 动画 ===== */
+      /* 示例：
+         showSlide("slide-0", 0.2, 3.0);
+         tl.fromTo("#s0-kicker", { opacity: 0, letterSpacing: "0.6em" }, { opacity: 1, letterSpacing: "0.28em", duration: 0.65, ease: "expo.out" }, 0.3);
+         tl.fromTo("#s0-title",  { opacity: 0, y: 46 }, { opacity: 1, y: 0, duration: 0.7, ease: "power3.out" }, 0.5);
+
+         showSlide("slide-1", 3.0, 6.0);
+         tl.fromTo("#s1-kicker", { opacity: 0, letterSpacing: "0.55em" }, { opacity: 1, letterSpacing: "0.28em", duration: 0.6, ease: "expo.out" }, 3.1);
+         tl.fromTo("#s1-text",   { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.65, ease: "power3.out" }, 3.3);
+      */
+
+      tl.set({}, {}, DUR);   // 撑满时长，勿删
+
+      /* ===== 字幕边界自检（debug，生产不影响） ===== */
+      groupMeta.forEach(function (gm, gi) {
+        tl.seek(gm.end + 0.01);
+        var cs = window.getComputedStyle(gm.el);
+        if (cs.opacity !== "0" && cs.visibility !== "hidden") {
+          console.warn("[caption-lint] group " + gi + " still visible at t=" + (gm.end + 0.01).toFixed(2));
+        }
+      });
+      tl.seek(0);
+
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

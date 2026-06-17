@@ -27,6 +27,7 @@
 |---|---|
 | 「做个视频 / 出片 / 把文案做成视频」，只给文案 | **模式 A：AI 原生**（TTS 配音 + 全屏 hf 场景，走下方 6 步标准流程） |
 | 「用我的声音出片 / 真人版 / 真人原声」，或给了一段真人口播录像 | **模式 B：真人原声**（真人原声 + hf 场景，走「真人原声模式」7 步流程；**画面布局二选一见下**） |
+| 「数字人出片 / 用数字人 / 没有拍视频」，无真人口播录像 | **模式 C：数字人**（克隆音色 + SadTalker 头像动画 + hf 场景，走「数字人模式」5 步流程；基于模式 B pip 骨架） |
 
 同一篇文案可以两版都出（例：ep10-douyin.mp4 是 A，ep10-douyin-own.mp4 是 B）。模式 B 不改动模式 A 的任何工具和流程。
 
@@ -80,6 +81,39 @@ hf-video-kit/
 
 句级/字级锚点提取方法：transcript_chars.json 里每个字有 {text,start,end}，标点附在字上；
 按 `text[-1] in '。！？'` 切句；关键词锚点用全文 find(子串) 映射回字的 start。
+
+## 数字人模式（模式 C，5 步按序执行）
+
+> 没有真人录像时，用克隆音色 + SadTalker 口型动画替代真人，其余场景与字幕完全复用 hf 体系。
+> face.mp4 是**方形视频**，直接铺满 PIP 圆窗（object-fit:cover），不做全画布合成。
+
+```
+① 肖像准备   选一张正面、表情自然、512×512 左右的头像照片（portrait.jpg）
+             用 tools/gen_best_portrait.py 从视频抽最佳眼神帧，或手动裁图
+② 资产生成   tools/.venv/bin/python tools/gen_dh_assets.py \
+               --portrait portrait.jpg \
+               --ref-audio ~/Desktop/a.wav \     # 参考音色（本人录音 5~30s）
+               --text "文案全文" \
+               --out-dir episodes/ep-NN/assets/
+             → 输出 voice.wav（-16 LUFS）和 face.mp4（756×756 方形，约 25min）
+③ 场景路由   拷贝 tools/project-scaffold-dh/ → episodes/ep-NN/hf-project/
+             按文案三级路由填场景（同 Mode A：判定表 → scene-library.md → 手写）
+             · PIP 圆窗 #face-pos：left/top 固定在右下角，无需 GSAP 缩窗动画
+             · T_PIP=0（face 从第 0 秒起进 PIP，无开场全屏段）
+             · DUR = voice.wav 实际时长（ffprobe 查，比 SadTalker 略长则用 voice 的）
+④ 字幕生成   transcript.js 手写或用 VoxCPM2 对齐输出的时间戳（字级）
+             格式与 Mode A 完全相同，照骨架里的示例改
+⑤ 渲染自检   scene_audit.py 通过 → hyperframes validate → snapshot 逐场景核对
+             → render → speedup.py 出 1.2 倍速版 → open 给用户看
+```
+
+数字人模式硬规则：
+1. **face.mp4 必须是方形**：gen_dh_assets.py 已保证输出 756×756，手动合成时同样要裁方形
+2. **object-position 默认 50% 20%**：SadTalker 人脸通常在帧上半部，20% 让头顶不被圆窗切掉
+3. **禁止全画布合成**：face.mp4 不上 1080×1920 底板，直接方形放 PIP，避免铺不满的黑边问题
+4. **SadTalker 约 25min**：M 系芯片跑 --size 512，提前告知用户；--size 256 约 8min 但质量稍差
+5. **voice.wav 时长 ≠ face.mp4 时长**：SadTalker 可能比音频多几帧，DUR 以 voice.wav 为准
+6. **眼神必须正视**：用 gen_best_portrait.py 从视频选最佳帧，避免侧脸/低头作为驱动图像
 
 ## 真人原声模式（模式 B，7 步按序执行）
 
