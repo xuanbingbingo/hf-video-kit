@@ -111,10 +111,12 @@ hf-video-kit/
 1. **face.mp4 必须是方形**：gen_dh_assets.py 已保证输出 756×756，手动合成时同样要裁方形
 2. **object-position 默认 50% 20%**：SadTalker 人脸通常在帧上半部，20% 让头顶不被圆窗切掉
 3. **禁止全画布合成**：face.mp4 不上 1080×1920 底板，直接方形放 PIP，避免铺不满的黑边问题
-4. **SadTalker 耗时看设备**：M 系芯片 --size 512 约 25min；Windows/Linux + N 卡（cuda）约几分钟，提前告知用户；--size 256 更快但质量稍差
-5. **voice.wav 时长 ≠ face.mp4 时长**：SadTalker 可能比音频多几帧，DUR 以 voice.wav 为准
-6. **眼神必须正视**：用 gen_best_portrait.py 从视频选最佳帧，避免侧脸/低头作为驱动图像
-7. **设备自动探测，跨平台无需改代码**：`--device` 默认 `auto`（Mac→mps / N 卡→cuda / 否则 cpu）；venv 解释器路径已自动适配 Windows（`venv\Scripts\python.exe`）。Windows N 卡用户照 SETUP-WINDOWS.md「模式 C」装，torch 必须装 CUDA 版
+4. **头动默认锁定（`--still`）最自然**：⚠️ 实测结论——开源 SadTalker 用 `--ref_pose` 视频驱动头动往往「乱晃」（短片段循环有 snap、眼神乱瞟），多数情况默认 `--still` 反而最稳。gen_dh_assets.py 默认 `--still + crop/256`；确需头动才传 `--ref-video`（建议先把驱动视频放慢+回文循环），这是实验性选项。`expression_scale` 控表情幅度（1.0 默认，嫌夸张调 0.8）
+5. **耗时看设备**：M 系芯片 `crop/256` 约 30min（`full/512` 约 50min，多出最慢的 seamlessClone，不值）；Windows/Linux + N 卡（cuda）约几分钟。提前告知用户
+6. **配音必降噪 + 长文案分句**：VoxCPM2 克隆音带声码器底噪 → gen_dh_assets.py 已内置 highpass+afftdn+lowpass；⚠️ 一次合成 >200 字尾部易漂移失真（afftdn 治不了），长文案改用 `voxcpm.cli batch` 分句合成再拼接
+7. **voice.wav 时长 ≠ face.mp4 时长**：SadTalker 可能比音频多几帧，DUR 以 voice.wav 为准
+8. **眼神必须正视**：用 gen_best_portrait.py 从视频选最佳帧，避免侧脸/低头作为驱动图像
+9. **设备自动探测，跨平台无需改代码**：`--device` 默认 `auto`（Mac→mps / N 卡→cuda / 否则 cpu）；venv 解释器路径已自动适配 Windows（`venv\Scripts\python.exe`）。Windows N 卡用户照 SETUP-WINDOWS.md「模式 C」装，torch 必须装 CUDA 版
 
 ## 真人原声模式（模式 B，7 步按序执行）
 
@@ -259,9 +261,9 @@ hf-video-kit/
 
 ## 交付设置（模式 A/B 通用）
 
-- **默认倍速 1.2**：渲染出原速成片后，跑 `tools/.venv/bin/python tools/speedup.py 成片.mp4`
-  生成 `成片-x1.2.mp4`（视频 setpts + 音频 atempo 变速不变调），**两个版本都保留，open（Win: start）打开 1.2 倍速版**
-- 用户说「原速 / 不要倍速」则跳过；要其他倍速传第三个参数（范围 0.5~2.0）
+- **默认倍速 1.2，且只保留 1.2 倍速版**：渲染出原速成片后，跑 `tools/.venv/bin/python tools/speedup.py 成片.mp4`
+  生成 `成片-x1.2.mp4`（视频 setpts + 音频 atempo 变速不变调），**生成后删除原速成片，只留 1.2 倍速版，open（Win: start）打开它**
+- 用户说「原速 / 不要倍速 / 也要原速」则保留原速版；要其他倍速传第三个参数（范围 0.5~2.0）
 - 倍速是渲染后处理，禁止改 TTS 语速或母带速度来实现（会牵连全部时间锚点）
 - 本地若存在 `private/` 目录（作者自用运营层，不入库），渲染交付后按 `private/PUBLISH-WORKFLOW.md` 继续发布物料流程
 

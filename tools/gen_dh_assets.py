@@ -11,14 +11,18 @@ gen_dh_assets.py — 数字人资产生成器 (Mode C)
     --out-dir episodes/ep01/assets/
 
 输出:
-  assets/voice.wav   — VoxCPM2 克隆音色，loudnorm -16 LUFS，48kHz 立体声
+  assets/voice.wav   — VoxCPM2 克隆音色，降噪 + loudnorm -16 LUFS，48kHz 立体声
   assets/face.mp4    — SadTalker 口型动画（无音轨），方形视频，直接放入 PIP 圆窗
 
 流程:
   1. VoxCPM2 → raw_voice.wav  (克隆音色)
-  2. ffmpeg loudnorm → voice.wav  (-16 LUFS)
-  3. SadTalker → sadtalker_raw.mp4 (含音轨，约 25min)
+  2. ffmpeg 降噪(highpass+afftdn+lowpass) + loudnorm → voice.wav  (-16 LUFS)
+  3. SadTalker → sadtalker_raw.mp4 (--still 锁头 + crop/256，约 30min)
   4. ffmpeg 去音轨 + 缩放成方形 → face.mp4  (PIP 用，直接铺满圆窗)
+
+经验结论(实测):
+  · 默认 --still 锁头最自然；--ref-video 视频驱动头动开源模型下往往「乱晃」，慎用
+  · 长文案一次合成尾部易漂移/失真 → 必要时分句合成(voxcpm.cli batch)再拼接
 """
 import argparse, os, subprocess, sys, tempfile
 from pathlib import Path
@@ -57,8 +61,9 @@ def get_duration(path: str) -> float:
 
 def gen_assets(portrait: str, ref_audio: str, text: str, out_dir: str,
                device: str = "auto",
-               face_size: int = 512,       # SadTalker --size (256 or 512)
-               pip_size: int = 756):       # square face.mp4 edge length
+               face_size: int = 256,       # SadTalker --size (256 足够 PIP，512 慢一倍)
+               pip_size: int = 756,        # square face.mp4 edge length
+               ref_video: str = None):     # 可选驱动视频（见下方说明，默认不用）
     device    = resolve_device(device)
     portrait  = os.path.abspath(portrait)
     ref_audio = os.path.abspath(ref_audio)
@@ -85,18 +90,26 @@ def gen_assets(portrait: str, ref_audio: str, text: str, out_dir: str,
         if not os.path.exists(raw_wav):
             sys.exit("[dh] VoxCPM2 produced no output")
 
-        # ── Step 2: Loudnorm → voice.wav ────────────────────────────────────
-        print("\n[dh] Step 2/4 — Loudnorm → voice.wav")
+        # ── Step 2: 降噪 + Loudnorm → voice.wav ─────────────────────────────
+        # VoxCPM2 克隆音常带声码器底噪 + 参考音底噪；highpass 去低频隆隆，
+        # afftdn 去稳态底噪，lowpass 7600 切掉人声频带之上的嘶声（16k 参考音有效频率≤8k，
+        # 不伤人声），最后 loudnorm 到 -16 LUFS。
+        print("\n[dh] Step 2/4 — 降噪 + Loudnorm → voice.wav")
         subprocess.run([
             "ffmpeg", "-y", "-i", raw_wav,
-            "-af", "loudnorm=I=-16:TP=-1.5:LRA=11",
+            "-af", "highpass=f=80,afftdn=nr=14:nf=-28,lowpass=f=7600,"
+                   "loudnorm=I=-16:TP=-1.5:LRA=11",
             "-ar", "48000", "-ac", "2",
             voice_out,
         ], check=True)
         print(f"[dh] Voice: {voice_out}")
 
         # ── Step 3: SadTalker → raw_dh_mp4 ─────────────────────────────────
-        print("\n[dh] Step 3/4 — SadTalker animation (~25 min on M-chip)")
+        # 默认 --still + preprocess crop（256）：头部锁定最自然，~30min（M 芯片）。
+        # ⚠️ 经验结论：开源 SadTalker 用 --ref_pose 视频驱动头动往往「乱晃」（13s 片段
+        #    循环有 snap、眼神乱瞟），多数情况默认 --still 反而最稳。只有确有需要再传 ref_video，
+        #    它会改用 ref_pose/ref_eyeblink 并去掉 --still（建议先把驱动视频放慢+回文循环降噪）。
+        print("\n[dh] Step 3/4 — SadTalker animation (~30 min on M-chip, --size 256)")
 
         # SadTalker requires 16kHz mono input
         st_wav = os.path.join(tmp, "st_voice.wav")
@@ -110,10 +123,15 @@ def gen_assets(portrait: str, ref_audio: str, text: str, out_dir: str,
             "--driven_audio", st_wav,
             "--source_image", portrait,
             "--result_dir", sadtalker_dir,
-            "--still",
-            "--preprocess", "full",
+            "--preprocess", "crop",
             "--size", str(face_size),
         ]
+        if ref_video:
+            # 视频驱动头动（实验性，易乱晃）：用作姿态+眨眼参考，不锁头
+            ref_video_abs = os.path.abspath(ref_video)
+            st_cmd += ["--ref_pose", ref_video_abs, "--ref_eyeblink", ref_video_abs]
+        else:
+            st_cmd.append("--still")    # 默认锁头，最稳
         if device == "cpu":
             st_cmd.append("--cpu")
         run(st_cmd, cwd=str(SADTALKER_DIR), device=device)
@@ -163,10 +181,12 @@ if __name__ == "__main__":
     parser.add_argument("--out-dir",   required=True, help="Output directory (will create voice.wav + face.mp4)")
     parser.add_argument("--device",    default="auto", choices=["auto", "mps", "cpu", "cuda"],
                         help="auto = mps on Mac, cuda on NVIDIA, else cpu")
-    parser.add_argument("--face-size", type=int, default=512, choices=[256, 512],
-                        help="SadTalker output resolution (default 512)")
+    parser.add_argument("--face-size", type=int, default=256, choices=[256, 512],
+                        help="SadTalker output resolution (default 256，PIP 圆窗够用且快一倍)")
     parser.add_argument("--pip-size",  type=int, default=756,
                         help="Square edge length of output face.mp4 (default 756)")
+    parser.add_argument("--ref-video", default=None,
+                        help="可选驱动视频（实验性，易乱晃）；传了用作头动+眨眼参考并去掉 --still，默认不用")
     args = parser.parse_args()
 
     gen_assets(
@@ -177,4 +197,5 @@ if __name__ == "__main__":
         device=args.device,
         face_size=args.face_size,
         pip_size=args.pip_size,
+        ref_video=args.ref_video,
     )
