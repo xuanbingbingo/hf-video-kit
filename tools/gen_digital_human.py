@@ -205,8 +205,9 @@ def run(portrait: str, output: str,
         raise FileNotFoundError(f"Audio not found: {audio}")
 
     if backend == "sadtalker":
-        # bbox_shift 是 musetalk 专用参数，透传会炸 run_sadtalker 的签名
-        kwargs.pop("bbox_shift", None)
+        # 白名单过滤：musetalk/liveportrait 专用参数透传会炸 run_sadtalker 的签名
+        allowed = {"still", "size", "preprocess", "enhancer", "use_cpu"}
+        kwargs = {k: v for k, v in kwargs.items() if k in allowed}
         return run_sadtalker(portrait, audio, output, **kwargs)
     elif backend == "musetalk":
         return run_musetalk(portrait, audio, output,
